@@ -542,7 +542,10 @@ jobs:
       - name: Git Clone uwulab version of aria2
         run: |
           export ROOT_DIR=$(pwd)
-          sudo tar -xzf "${ROOT_DIR}/releases/aria2-deps-${{ matrix.pair.arch }}.tar.gz" -C /
+          cd deps
+          sudo cp -rf aria2-deps/* /
+
+          cd "${ROOT_DIR}"
           rm -rf src/aria2
           git clone --branch uwulab --depth 1 https://github.com/uwulab/aria2.git src/aria2
           cd src/aria2
