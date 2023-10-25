@@ -1,6 +1,7 @@
 name: precompile
 
 env:
+  ZLIB_VERSION: "1.3"
   LIBXML2_VERSION: "2.11.5"
   OPENSSL_VERSION: "3.1.3"
   LIBSSH2_VERSION: "1.11.0"
@@ -68,6 +69,18 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ${{ matrix.pair.cc }} ${{ matrix.pair.cpp }}
 
+      - name: Cache zlib
+        uses: actions/cache@v3
+        id: cache-zlib
+        with:
+          path: |
+            tarballs/zlib-${{ env.ZLIB_VERSION }}.tar.gz
+          key: tarballs-zlib-${{ env.ZLIB_VERSION }}
+      - name: Get zlib
+        if: steps.cache-zlib.outputs.cache-hit != 'true'
+        run: |
+          curl -fSL "https://zlib.net/zlib-${ZLIB_VERSION}.tar.gz" -o "tarballs/zlib-${ZLIB_VERSION}.tar.gz"
+
       - name: Cache libxml2
         uses: actions/cache@v3
         id: cache-libxml2
@@ -128,6 +141,31 @@ jobs:
         if: steps.cache-sqlite3.outputs.cache-hit != 'true'
         run: |
           curl -fSL "https://www.sqlite.org/2023/sqlite-autoconf-${SQLITE3_VERSION}.tar.gz" -o "tarballs/sqlite-autoconf-${SQLITE3_VERSION}.tar.gz"
+
+      - name: Cache compiled zlib
+        uses: actions/cache@v3
+        id: cache-zlib-shared
+        with:
+          path: |
+            releases/zlib-${{ env.OPENSSL_VERSION }}-${{ matrix.pair.arch }}.tar.gz
+            deps/zlib/
+          key: releases-shared-zlib-${{ env.OPENSSL_VERSION }}-${{ matrix.pair.arch }}
+      - name: Compile zlib
+        if: steps.cache-zlib-shared.outputs.cache-hit != 'true'
+        run: |
+          export ROOT_DIR=$(pwd)
+          export CONFIGURE_HOST=""
+          if [ "${{ matrix.pair.arch }}" != "x86_64-linux-gnu" ]; then
+            export CONFIGURE_HOST="--host=${{ matrix.pair.arch }}"
+          fi
+          tar -xzf "tarballs/zlib-${ZLIB_VERSION}.tar.gz" -C src
+          cd "src/zlib-${ZLIB_VERSION}"
+          export CFLAGS="-fPIC"
+          ./configure "${CONFIGURE_HOST}" --prefix=/usr/local
+          make -j$(nproc)
+          make DESTDIR="${ROOT_DIR}/deps/zlib" install
+          cd "${ROOT_DIR}/deps"
+          tar -czf "${ROOT_DIR}/releases/zlib-${ZLIB_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C zlib .
 
       - name: Cache compiled libxml2
         uses: actions/cache@v3
