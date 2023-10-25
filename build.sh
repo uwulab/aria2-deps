@@ -85,7 +85,7 @@ cd "${ROOT_DIR}"
 if [ ! -f "tarballs/sqlite-autoconf-${SQLITE3_VERSION}.tar.gz" ]; then
     curl -fSL "https://www.sqlite.org/2023/sqlite-autoconf-${SQLITE3_VERSION}.tar.gz" -o "tarballs/sqlite-autoconf-${SQLITE3_VERSION}.tar.gz"
 fi
-tar -xzf "sqlite-autoconf-${SQLITE3_VERSION}.tar.gz" -C src
+tar -xzf "tarballs/sqlite-autoconf-${SQLITE3_VERSION}.tar.gz" -C src
 cd "src/sqlite-autoconf-${SQLITE3_VERSION}"
 ./configure --enable-shared=no
 make -j${NPROC}
