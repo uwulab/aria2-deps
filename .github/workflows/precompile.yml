@@ -237,7 +237,7 @@ jobs:
           make DESTDIR="${ROOT_DIR}/deps/libssh2" install
           cd "${ROOT_DIR}/deps"
           tar -czf "${ROOT_DIR}/releases/libssh2-${LIBSSH2_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C libssh2 .
-      
+
       - name: Cache compiled sqlite3
         uses: actions/cache@v3
         id: cache-sqlite3-compiled
@@ -252,6 +252,250 @@ jobs:
           export CONFIGURE_HOST=""
           if [ "${{ matrix.pair.arch }}" != "x86_64-linux-gnu" ]; then
             export CONFIGURE_HOST="--host=${{ matrix.pair.arch }}"
+          fi
+          tar -xzf "tarballs/sqlite-autoconf-${SQLITE3_VERSION}.tar.gz" -C src
+          cd "src/sqlite-autoconf-${SQLITE3_VERSION}"
+          ./configure --enable-shared=no "${CONFIGURE_HOST}"
+          make -j$(nproc)
+          make DESTDIR="${ROOT_DIR}/deps/sqlite3" install
+          cd "${ROOT_DIR}/deps"
+          tar -czf "${ROOT_DIR}/releases/sqlite3-${SQLITE3_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C sqlite3 .
+
+      - name: Create release
+        run: |
+          cd deps
+          mkdir -p aria2-deps
+
+          tar -xzf "${ROOT_DIR}/releases/libxml2-${LIBXML2_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps
+          tar -xzf "${ROOT_DIR}/releases/libc-ares-${LIBCARES2_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps
+          tar -xzf "${ROOT_DIR}/releases/openssl-${OPENSSL_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps
+          tar -xzf "${ROOT_DIR}/releases/libssh2-${LIBSSH2_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps
+          tar -xzf "${ROOT_DIR}/releases/sqlite3-${SQLITE3_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps
+
+          tar -czf "${ROOT_DIR}/releases/aria2-deps-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps .
+
+      - uses: softprops/action-gh-release@v1
+        with:
+          files: releases/*.tar.gz
+
+  macos:
+    runs-on: macos-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - pair:
+              arch: x86_64-apple-darwin
+              cpu_arch: x86_64
+              cmake_osx_arch: CMAKE_OSX_ARCHITECTURES="x86_64"
+              openssl_configure: darwin64-x86_64
+          - pair:
+              arch: arm64-apple-darwin
+              cpu_arch: arm64
+              cmake_osx_arch: CMAKE_OSX_ARCHITECTURES="arm64"
+              openssl_configure: darwin64-arm64
+
+    name: ${{ matrix.pair.arch }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create directories
+        run: |
+          mkdir -p "src"
+          mkdir -p "tarballs"
+          mkdir -p "deps"
+          mkdir -p "releases"
+
+      - name: Cache libxml2
+        uses: actions/cache@v3
+        id: cache-libxml2
+        with:
+          path: |
+            tarballs/libxml2-${{ env.LIBXML2_VERSION }}.tar.gz
+          key: tarballs-libxml2-${{ env.LIBXML2_VERSION }}
+      - name: Get libxml2
+        if: steps.cache-libxml2.outputs.cache-hit != 'true'
+        run: |
+          curl -fSL "https://github.com/GNOME/libxml2/archive/refs/tags/v${LIBXML2_VERSION}.tar.gz" -o "tarballs/libxml2-v${LIBXML2_VERSION}.tar.gz"
+
+      - name: Cache libc-ares2
+        uses: actions/cache@v3
+        id: cache-libc-ares2
+        with:
+          path: |
+            tarballs/c-ares-${{ env.LIBCARES2_VERSION }}.tar.gz
+          key: tarballs-libc-ares-${{ env.LIBCARES2_VERSION }}
+      - name: Get libc-ares2
+        if: steps.cache-libc-ares2.outputs.cache-hit != 'true'
+        run: |
+          export LIBCARES2_VERSION_UNDERSCORE=${LIBCARES2_VERSION//./_}
+          curl -fSL "https://github.com/c-ares/c-ares/releases/download/cares-${LIBCARES2_VERSION_UNDERSCORE}/c-ares-${LIBCARES2_VERSION}.tar.gz" -o "tarballs/libc-ares-${LIBCARES2_VERSION}.tar.gz"
+
+      - name: Cache OpenSSL
+        uses: actions/cache@v3
+        id: cache-openssl
+        with:
+          path: |
+            tarballs/openssl-${{ env.OPENSSL_VERSION }}.tar.gz
+          key: tarballs-openssl-${{ env.OPENSSL_VERSION }}
+      - name: Get OpenSSL
+        if: steps.cache-openssl.outputs.cache-hit != 'true'
+        run: |
+          curl -fSL "https://www.openssl.org/source/openssl-${OPENSSL_VERSION}.tar.gz" -o "tarballs/openssl-${OPENSSL_VERSION}.tar.gz"
+
+      - name: Cache libssh2
+        uses: actions/cache@v3
+        id: cache-libssh2
+        with:
+          path: |
+            tarballs/libssh2-${{ env.LIBSSH2_VERSION }}.tar.gz
+          key: tarballs-libssh2-${{ env.LIBSSH2_VERSION }}
+      - name: Get libssh2
+        if: steps.cache-libssh2.outputs.cache-hit != 'true'
+        run: |
+          curl -fSL "https://libssh2.org/download/libssh2-${LIBSSH2_VERSION}.tar.gz" -o "tarballs/libssh2-${LIBSSH2_VERSION}.tar.gz"
+
+      - name: Cache SQLite3
+        uses: actions/cache@v3
+        id: cache-sqlite3
+        with:
+          path: |
+            tarballs/sqlite-autoconf-${{ env.SQLITE3_VERSION }}.tar.gz
+          key: tarballs-sqlite3-${{ env.SQLITE3_VERSION }}
+      - name: Get SQLite3
+        if: steps.cache-sqlite3.outputs.cache-hit != 'true'
+        run: |
+          curl -fSL "https://www.sqlite.org/2023/sqlite-autoconf-${SQLITE3_VERSION}.tar.gz" -o "tarballs/sqlite-autoconf-${SQLITE3_VERSION}.tar.gz"
+
+      - name: Cache compiled libxml2
+        uses: actions/cache@v3
+        id: cache-libxml2-compiled
+        with:
+          path: |
+            releases/libxml2-${{ env.LIBXML2_VERSION }}-${{ matrix.pair.arch }}.tar.gz
+          key: releases-libxml2-${{ env.LIBXML2_VERSION }}-${{ matrix.pair.arch }}
+      - name: Compile libxml2
+        if: steps.cache-libxml2-compiled.outputs.cache-hit != 'true'
+        run: |
+          export ROOT_DIR=$(pwd)
+          tar -xzf "tarballs/libxml2-v${LIBXML2_VERSION}.tar.gz" -C src
+          cd "src/libxml2-${LIBXML2_VERSION}"
+          export CMAKE_TOOLCHAIN_FILE=-DCMAKE_TOOLCHAIN_FILE="${ROOT_DIR}/${{ matrix.pair.cmake_toolchain_file }}"
+          if [ -z "${{ matrix.pair.cmake_toolchain_file }}" ]; then
+            export CMAKE_TOOLCHAIN_FILE=""
+          fi
+          cmake -S . -B libxml2-build \
+              -D BUILD_SHARED_LIBS=OFF \
+              -D CMAKE_BUILD_TYPE=Release \
+              -D CMAKE_INSTALL_PREFIX=/usr/local \
+              -D LIBXML2_WITH_ICONV=OFF \
+              -D LIBXML2_WITH_LZMA=OFF \
+              -D LIBXML2_WITH_PYTHON=OFF \
+              -D LIBXML2_WITH_ZLIB=OFF "${{ matrix.pair.cmake_osx_arch }}"
+          cd libxml2-build && \
+              make -j$(nproc) && \
+              make DESTDIR="${ROOT_DIR}/deps/libxml2" install
+          cd "${ROOT_DIR}/deps"
+          tar -czf "${ROOT_DIR}/releases/libxml2-${LIBXML2_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C libxml2 .
+
+      - name: Cache compiled libc-ares
+        uses: actions/cache@v3
+        id: cache-libc-ares-compiled
+        with:
+          path: |
+            releases/libc-ares-${{ env.LIBCARES2_VERSION }}-${{ matrix.pair.arch }}.tar.gz
+          key: releases-libc-ares-${{ env.LIBCARES2_VERSION }}-${{ matrix.pair.arch }}
+      - name: Compile libc-ares
+        if: steps.cache-libc-ares-compiled.outputs.cache-hit != 'true'
+        run: |
+          export ROOT_DIR=$(pwd)
+          export CONFIGURE_HOST=""
+          export CFLAGS=""
+          if [ "${{ matrix.pair.arch }}" == "arm64-apple-darwin" ]; then
+            export CONFIGURE_HOST="--host=${{ matrix.pair.arch }}"
+            export CC="gcc -arch arm64"
+            export CXX="g++ -arch arm64"
+            export CFLAGS="-arch arm64 -mmacosx-version-min=11.0 -target arm64-apple-macos11"
+            export LDFLAGS="-arch arm64 -mmacosx-version-min=11.0 -target arm64-apple-macos11"
+          fi
+          tar -xzf "tarballs/libc-ares-${LIBCARES2_VERSION}.tar.gz" -C src
+          cd "src/c-ares-${LIBCARES2_VERSION}"
+          ./configure "${CONFIGURE_HOST}" --prefix=/usr/local --enable-shared=no --enable-static=yes
+          make -j$(nproc) && \
+              make DESTDIR="${ROOT_DIR}/deps/libc-ares" install
+          cd "${ROOT_DIR}/deps"
+          tar -czf "${ROOT_DIR}/releases/libc-ares-${LIBCARES2_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C libc-ares .
+
+      - name: Cache compiled openssl
+        uses: actions/cache@v3
+        id: cache-openssl-compiled
+        with:
+          path: |
+            releases/openssl-${{ env.OPENSSL_VERSION }}-${{ matrix.pair.arch }}.tar.gz
+            deps/openssl/
+          key: releases-openssl-${{ env.OPENSSL_VERSION }}-${{ matrix.pair.arch }}
+      - name: Compile openssl
+        if: steps.cache-openssl-compiled.outputs.cache-hit != 'true'
+        run: |
+          export ROOT_DIR=$(pwd)
+          export CONFIGURE_PARAM="${{ matrix.pair.openssl_configure }}"
+          tar -xzf "tarballs/openssl-${OPENSSL_VERSION}.tar.gz" -C src
+          cd "src/openssl-${OPENSSL_VERSION}"
+          ./Configure "${CONFIGURE_PARAM}" --prefix=/usr/local no-shared
+          make -j$(nproc)
+          make DESTDIR="${ROOT_DIR}/deps/openssl" install_sw
+          cd "${ROOT_DIR}/deps"
+          tar -czf "${ROOT_DIR}/releases/openssl-${OPENSSL_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C openssl .
+
+      - name: Cache compiled libssh2
+        uses: actions/cache@v3
+        id: cache-libssh2-compiled
+        with:
+          path: |
+            releases/libssh2-${{ env.LIBSSH2_VERSION }}-${{ matrix.pair.arch }}.tar.gz
+          key: releases-libssh2-${{ env.LIBSSH2_VERSION }}-${{ matrix.pair.arch }}
+      - name: Compile libssh2
+        if: steps.cache-libssh2-compiled.outputs.cache-hit != 'true'
+        run: |
+          export ROOT_DIR=$(pwd)
+          export CONFIGURE_HOST=""
+          if [ "${{ matrix.pair.arch }}" == "arm64-apple-darwin" ]; then
+            export CONFIGURE_HOST="--host=${{ matrix.pair.arch }}"
+            export CC="gcc -arch arm64"
+            export CXX="g++ -arch arm64"
+            export CFLAGS="-arch arm64 -mmacosx-version-min=11.0 -target arm64-apple-macos11"
+            export LDFLAGS="-arch arm64 -mmacosx-version-min=11.0 -target arm64-apple-macos11"
+          fi
+          tar -xzf "tarballs/libssh2-${LIBSSH2_VERSION}.tar.gz" -C src
+          cd "src/libssh2-${LIBSSH2_VERSION}"
+          ./configure --disable-tests \
+            --disable-sshd-tests \
+            --disable-examples-build \
+            --enable-shared=no "${CONFIGURE_HOST}"
+          make -j$(nproc)
+          make DESTDIR="${ROOT_DIR}/deps/libssh2" install
+          cd "${ROOT_DIR}/deps"
+          tar -czf "${ROOT_DIR}/releases/libssh2-${LIBSSH2_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C libssh2 .
+
+      - name: Cache compiled sqlite3
+        uses: actions/cache@v3
+        id: cache-sqlite3-compiled
+        with:
+          path: |
+            releases/sqlite3-${{ env.OPENSSL_VERSION }}-${{ matrix.pair.arch }}.tar.gz
+          key: releases-sqlite3-${{ env.OPENSSL_VERSION }}-${{ matrix.pair.arch }}
+      - name: Compile sqlite3
+        if: steps.cache-sqlite3-compiled.outputs.cache-hit != 'true'
+        run: |
+          export ROOT_DIR=$(pwd)
+          export CONFIGURE_HOST=""
+          if [ "${{ matrix.pair.arch }}" != "x86_64-linux-gnu" ]; then
+            export CONFIGURE_HOST="--host=${{ matrix.pair.arch }}"
+            export CC="gcc -arch arm64"
+            export CXX="g++ -arch arm64"
+            export CFLAGS="-arch arm64 -mmacosx-version-min=11.0 -target arm64-apple-macos11"
+            export LDFLAGS="-arch arm64 -mmacosx-version-min=11.0 -target arm64-apple-macos11"
           fi
           tar -xzf "tarballs/sqlite-autoconf-${SQLITE3_VERSION}.tar.gz" -C src
           cd "src/sqlite-autoconf-${SQLITE3_VERSION}"
