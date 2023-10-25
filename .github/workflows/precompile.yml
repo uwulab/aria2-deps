@@ -83,6 +83,7 @@ jobs:
       - name: Get libc-ares2
         if: steps.cache-libc-ares2.outputs.cache-hit != 'true'
         run: |
+          export LIBCARES2_VERSION_UNDERSCORE=${LIBCARES2_VERSION//./_}
           curl -fSL "https://github.com/c-ares/c-ares/releases/download/cares-${LIBCARES2_VERSION_UNDERSCORE}/c-ares-${LIBCARES2_VERSION}.tar.gz" -o "tarballs/libc-ares-${LIBCARES2_VERSION}.tar.gz"
       
       - name: Cache OpenSSL
