@@ -293,7 +293,7 @@ jobs:
           cd src/aria2
           sudo apt install -y autoconf automake libtool autopoint gettext
           autoreconf -i
-          ./configure --enable-static --enable-libaria2 "${CONFIGURE_HOST}" ARIA2_STATIC=yes
+          ./configure --enable-shared --enable-libaria2 "${CONFIGURE_HOST}"
           make -j$(nproc)
           make DESTDIR="${ROOT_DIR}/deps/aria2" install
           cd "${ROOT_DIR}/deps"
@@ -561,7 +561,7 @@ jobs:
       #     cd src/aria2
       #     brew install autoconf automake libtool
       #     export CONFIGURE_HOST=""
-      #     if [ "${{ matrix.pair.arch }}" == "arm64-apple-darwin" ]; then
+      #     if [ "${{ matrix.pair.arch }}" != "x86_64-apple-darwin" ]; then
       #       export CONFIGURE_HOST="--host=${{ matrix.pair.arch }}"
       #       export CC="gcc -arch arm64"
       #       export CXX="g++ -arch arm64"
