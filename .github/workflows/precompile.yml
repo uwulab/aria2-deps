@@ -280,25 +280,29 @@ jobs:
 
           tar -czf "${ROOT_DIR}/releases/aria2-deps-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps .
 
-      # - name: Git Clone uwulab version of aria2
-      #   run: |
-      #     export ROOT_DIR=$(pwd)
-      #     sudo tar -xzf "${ROOT_DIR}/releases/aria2-deps-${{ matrix.pair.arch }}.tar.gz" -C /
-      #     rm -rf src/aria2
-      #     git clone --branch uwulab --depth 1 https://github.com/uwulab/aria2.git src/aria2
-      #     cd src/aria2
-      #     sudo apt install -y autoconf automake libtool autopoint gettext
-      #     autoreconf -i
-      #     ./configure --enable-static --enable-libaria2 ARIA2_STATIC=yes
-      #     make -j$(nproc)
-      #     make DESTDIR="${ROOT_DIR}/deps/aria2" install
-      #     cd "${ROOT_DIR}/deps"
-      #     tar -czf "${ROOT_DIR}/releases/libaria2-${{ matrix.pair.arch }}.tar.gz" -C aria2 .
+      - name: Git Clone uwulab version of aria2
+        run: |
+          export ROOT_DIR=$(pwd)
+          export CONFIGURE_HOST=""
+          if [ "${{ matrix.pair.arch }}" != "x86_64-linux-gnu" ]; then
+            export CONFIGURE_HOST="--host=${{ matrix.pair.arch }}"
+          fi
+          sudo tar -xzf "${ROOT_DIR}/releases/aria2-deps-${{ matrix.pair.arch }}.tar.gz" -C /
+          rm -rf src/aria2
+          git clone --branch uwulab --depth 1 https://github.com/uwulab/aria2.git src/aria2
+          cd src/aria2
+          sudo apt install -y autoconf automake libtool autopoint gettext
+          autoreconf -i
+          ./configure --enable-static --enable-libaria2 "${CONFIGURE_HOST}" ARIA2_STATIC=yes
+          make -j$(nproc)
+          make DESTDIR="${ROOT_DIR}/deps/aria2" install
+          cd "${ROOT_DIR}/deps"
+          tar -czf "${ROOT_DIR}/releases/libaria2-${{ matrix.pair.arch }}.tar.gz" -C aria2 .
 
-      #     cd "${ROOT_DIR}/deps"
-      #     tar -xzf "${ROOT_DIR}/releases/libaria2-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps
+          cd "${ROOT_DIR}/deps"
+          tar -xzf "${ROOT_DIR}/releases/libaria2-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps
 
-      #     tar -czf "${ROOT_DIR}/releases/aria2-deps-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps .
+          tar -czf "${ROOT_DIR}/releases/aria2-deps-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps .
 
       - uses: softprops/action-gh-release@v1
         with:
