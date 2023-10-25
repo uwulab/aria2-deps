@@ -37,7 +37,7 @@ jobs:
               cpp: g++-aarch64-linux-gnu
               cmake_toolchain_file: cc_toolchain/aarch64-linux-gnu.cmake
           - pair:
-              arch: armv7l-linux-gnueabihf
+              arch: arm-linux-gnueabihf
               cc: gcc-arm-linux-gnueabihf
               cpp: g++-arm-linux-gnueabihf
               cmake_toolchain_file: cc_toolchain/armv7l-linux-gnueabihf.cmake
@@ -85,7 +85,7 @@ jobs:
         run: |
           export LIBCARES2_VERSION_UNDERSCORE=${LIBCARES2_VERSION//./_}
           curl -fSL "https://github.com/c-ares/c-ares/releases/download/cares-${LIBCARES2_VERSION_UNDERSCORE}/c-ares-${LIBCARES2_VERSION}.tar.gz" -o "tarballs/libc-ares-${LIBCARES2_VERSION}.tar.gz"
-      
+
       - name: Cache OpenSSL
         uses: actions/cache@v3
         id: cache-openssl
@@ -164,12 +164,13 @@ jobs:
         if: steps.cache-libc-ares-compiled-linux.outputs.cache-hit != 'true'
         run: |
           export ROOT_DIR=$(pwd)
-          export CC=${{ matrix.pair.cc }}
-          export CXX=${{ matrix.pair.cpp }}
-          export CPP=${{ matrix.pair.cpp }}
+          export CONFIGURE_HOST=""
+          if [ "${{ matrix.pair.arch }}" != "x86_64-linux-gnue" ]; then
+            export CONFIGURE_HOST="--host=${{ matrix.pair.arch }}"
+          fi
           tar -xzf "tarballs/libc-ares-${LIBCARES2_VERSION}.tar.gz" -C src
           cd "src/c-ares-${LIBCARES2_VERSION}"
-          ./configure --prefix=/usr/local --enable-shared=no --enable-static=yes
+          ./configure "${CONFIGURE_HOST}" --prefix=/usr/local --enable-shared=no --enable-static=yes
           make -j${NPROC} && \
               make DESTDIR="${ROOT_DIR}/deps/libc-ares" install
           cd "${ROOT_DIR}"
