@@ -95,7 +95,7 @@ jobs:
       
       - name: Cache compiled libxml2
         uses: actions/cache@v3
-        id: cache-libxml2-compiled-linux-${{ matrix.arch }}-gnu
+        id: cache-libxml2-compiled-linux
         with:
           path: |
             ~/deps/libxml2-${{ env.LIBXML2_VERSION }}-linux-${{ matrix.arch }}-gnu.tar.gz
