@@ -45,7 +45,7 @@ jobs:
               arch: arm-linux-gnueabihf
               cc: gcc-arm-linux-gnueabihf
               cpp: g++-arm-linux-gnueabihf
-              gcc: arm-linux-gnu-gnueabihf
+              gcc: arm-linux-gnueabihf-gcc
               openssl_configure: linux-generic32
               openssl_prefix: "--cross-compile-prefix=/usr/bin/arm-linux-gnueabihf-"
               cmake_toolchain_file: cc_toolchain/armv7l-linux-gnueabihf.cmake
@@ -53,7 +53,7 @@ jobs:
               arch: riscv64-linux-gnu
               cc: gcc-riscv64-linux-gnu
               cpp: g++-riscv64-linux-gnu
-              gcc: riscv64-linux-gnu-gnu
+              gcc: riscv64-linux-gnu-gcc
               openssl_configure: linux64-riscv64
               openssl_prefix: "--cross-compile-prefix=/usr/bin/riscv64-linux-gnu-"
               cmake_toolchain_file: cc_toolchain/riscv64-linux-gnu.cmake
