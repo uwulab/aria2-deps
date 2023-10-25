@@ -135,7 +135,7 @@ jobs:
         with:
           path: |
             releases/libxml2-${{ env.LIBXML2_VERSION }}-${{ matrix.pair.arch }}.tar.gz
-          key: releases-libxml2-${{ env.LIBXML2_VERSION }}-${{ matrix.pair.arch }}
+          key: releases-shared-libxml2-${{ env.LIBXML2_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile libxml2
         if: steps.cache-libxml2-shared.outputs.cache-hit != 'true'
         run: |
@@ -167,7 +167,7 @@ jobs:
         with:
           path: |
             releases/libc-ares-${{ env.LIBCARES2_VERSION }}-${{ matrix.pair.arch }}.tar.gz
-          key: releases-libc-ares-${{ env.LIBCARES2_VERSION }}-${{ matrix.pair.arch }}
+          key: releases-shared-libc-ares-${{ env.LIBCARES2_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile libc-ares
         if: steps.cache-libc-ares-shared.outputs.cache-hit != 'true'
         run: |
@@ -192,7 +192,7 @@ jobs:
           path: |
             releases/openssl-${{ env.OPENSSL_VERSION }}-${{ matrix.pair.arch }}.tar.gz
             deps/openssl/
-          key: releases-openssl-${{ env.OPENSSL_VERSION }}-${{ matrix.pair.arch }}
+          key: releases-shared-openssl-${{ env.OPENSSL_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile openssl
         if: steps.cache-openssl-shared.outputs.cache-hit != 'true'
         run: |
@@ -218,7 +218,7 @@ jobs:
         with:
           path: |
             releases/libssh2-${{ env.LIBSSH2_VERSION }}-${{ matrix.pair.arch }}.tar.gz
-          key: releases-libssh2-${{ env.LIBSSH2_VERSION }}-${{ matrix.pair.arch }}
+          key: releases-shared-libssh2-${{ env.LIBSSH2_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile libssh2
         if: steps.cache-libssh2-shared.outputs.cache-hit != 'true'
         run: |
@@ -248,7 +248,7 @@ jobs:
         with:
           path: |
             releases/sqlite3-${{ env.SQLITE3_VERSION }}-${{ matrix.pair.arch }}.tar.gz
-          key: releases-sqlite3-${{ env.SQLITE3_VERSION }}-${{ matrix.pair.arch }}
+          key: releases-shared-sqlite3-${{ env.SQLITE3_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile sqlite3
         if: steps.cache-sqlite3-shared.outputs.cache-hit != 'true'
         run: |
