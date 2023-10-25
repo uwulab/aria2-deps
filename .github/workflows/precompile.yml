@@ -263,6 +263,7 @@ jobs:
 
       - name: Create release
         run: |
+          export ROOT_DIR=$(pwd)
           cd deps
           mkdir -p aria2-deps
 
@@ -507,6 +508,7 @@ jobs:
 
       - name: Create release
         run: |
+          export ROOT_DIR=$(pwd)
           cd deps
           mkdir -p aria2-deps
 
