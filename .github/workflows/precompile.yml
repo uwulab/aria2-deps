@@ -62,6 +62,7 @@ jobs:
           mkdir -p "src"
           mkdir -p "tarballs"
           mkdir -p "deps"
+          mkdir -p "releases"
       - name: Install C Compiler
         run: |
           sudo apt-get update
@@ -130,13 +131,13 @@ jobs:
 
       - name: Cache compiled libxml2
         uses: actions/cache@v3
-        id: cache-libxml2-compiled-linux
+        id: cache-libxml2-compiled
         with:
           path: |
-            deps/libxml2-${{ env.LIBXML2_VERSION }}-${{ matrix.pair.arch }}.tar.gz
-          key: deps-libxml2-${{ env.LIBXML2_VERSION }}-${{ matrix.pair.arch }}
+            releases/libxml2-${{ env.LIBXML2_VERSION }}-${{ matrix.pair.arch }}.tar.gz
+          key: releases-libxml2-${{ env.LIBXML2_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile libxml2
-        if: steps.cache-libxml2-compiled-linux.outputs.cache-hit != 'true'
+        if: steps.cache-libxml2-compiled.outputs.cache-hit != 'true'
         run: |
           export ROOT_DIR=$(pwd)
           tar -xzf "tarballs/libxml2-v${LIBXML2_VERSION}.tar.gz" -C src
@@ -157,17 +158,17 @@ jobs:
               make -j$(nproc) && \
               make DESTDIR="${ROOT_DIR}/deps/libxml2" install
           cd "${ROOT_DIR}/deps"
-          tar -czf "libxml2-${LIBXML2_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C libxml2 .
+          tar -czf "${ROOT_DIR}/releases/libxml2-${LIBXML2_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C libxml2 .
 
       - name: Cache compiled libc-ares
         uses: actions/cache@v3
-        id: cache-libc-ares-compiled-linux
+        id: cache-libc-ares-compiled
         with:
           path: |
-            deps/libc-ares-${{ env.LIBCARES2_VERSION }}-${{ matrix.pair.arch }}.tar.gz
-          key: deps-libc-ares-${{ env.LIBCARES2_VERSION }}-${{ matrix.pair.arch }}
+            releases/libc-ares-${{ env.LIBCARES2_VERSION }}-${{ matrix.pair.arch }}.tar.gz
+          key: releases-libc-ares-${{ env.LIBCARES2_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile libc-ares
-        if: steps.cache-libc-ares-compiled-linux.outputs.cache-hit != 'true'
+        if: steps.cache-libc-ares-compiled.outputs.cache-hit != 'true'
         run: |
           export ROOT_DIR=$(pwd)
           export CONFIGURE_HOST=""
@@ -180,18 +181,18 @@ jobs:
           make -j$(nproc) && \
               make DESTDIR="${ROOT_DIR}/deps/libc-ares" install
           cd "${ROOT_DIR}/deps"
-          tar -czf "libc-ares-${LIBCARES2_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C libc-ares .
+          tar -czf "${ROOT_DIR}/releases/libc-ares-${LIBCARES2_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C libc-ares .
 
       - name: Cache compiled openssl
         uses: actions/cache@v3
-        id: cache-openssl-compiled-linux
+        id: cache-openssl-compiled
         with:
           path: |
-            deps/openssl-${{ env.OPENSSL_VERSION }}-${{ matrix.pair.arch }}.tar.gz
+            releases/openssl-${{ env.OPENSSL_VERSION }}-${{ matrix.pair.arch }}.tar.gz
             deps/openssl/
-          key: deps-openssl-${{ env.OPENSSL_VERSION }}-${{ matrix.pair.arch }}
+          key: releases-openssl-${{ env.OPENSSL_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile openssl
-        if: steps.cache-openssl-compiled-linux.outputs.cache-hit != 'true'
+        if: steps.cache-openssl-compiled.outputs.cache-hit != 'true'
         run: |
           export ROOT_DIR=$(pwd)
           export CONFIGURE_PARAM=""
@@ -206,17 +207,17 @@ jobs:
           make -j$(nproc)
           make DESTDIR="${ROOT_DIR}/deps/openssl" install_sw
           cd "${ROOT_DIR}/deps"
-          tar -czf "openssl-${OPENSSL_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C openssl .
+          tar -czf "${ROOT_DIR}/releases/openssl-${OPENSSL_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C openssl .
 
       - name: Cache compiled libssh2
         uses: actions/cache@v3
-        id: cache-libssh2-compiled-linux
+        id: cache-libssh2-compiled
         with:
           path: |
-            deps/libssh2-${{ env.LIBSSH2_VERSION }}-${{ matrix.pair.arch }}.tar.gz
-          key: deps-libssh2-${{ env.LIBSSH2_VERSION }}-${{ matrix.pair.arch }}
+            releases/libssh2-${{ env.LIBSSH2_VERSION }}-${{ matrix.pair.arch }}.tar.gz
+          key: releases-libssh2-${{ env.LIBSSH2_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile libssh2
-        if: steps.cache-libssh2-compiled-linux.outputs.cache-hit != 'true'
+        if: steps.cache-libssh2-compiled.outputs.cache-hit != 'true'
         run: |
           export ROOT_DIR=$(pwd)
           export CONFIGURE_HOST=""
@@ -235,17 +236,17 @@ jobs:
           make -j$(nproc)
           make DESTDIR="${ROOT_DIR}/deps/libssh2" install
           cd "${ROOT_DIR}/deps"
-          tar -czf "libssh2-${LIBSSH2_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C libssh2 .
+          tar -czf "${ROOT_DIR}/releases/libssh2-${LIBSSH2_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C libssh2 .
       
       - name: Cache compiled sqlite3
         uses: actions/cache@v3
-        id: cache-sqlite3-compiled-linux
+        id: cache-sqlite3-compiled
         with:
           path: |
-            deps/sqlite3-${{ env.OPENSSL_VERSION }}-${{ matrix.pair.arch }}.tar.gz
-          key: deps-sqlite3-${{ env.OPENSSL_VERSION }}-${{ matrix.pair.arch }}
+            releases/sqlite3-${{ env.OPENSSL_VERSION }}-${{ matrix.pair.arch }}.tar.gz
+          key: releases-sqlite3-${{ env.OPENSSL_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile sqlite3
-        if: steps.cache-sqlite3-compiled-linux.outputs.cache-hit != 'true'
+        if: steps.cache-sqlite3-compiled.outputs.cache-hit != 'true'
         run: |
           export ROOT_DIR=$(pwd)
           export CONFIGURE_HOST=""
@@ -258,8 +259,21 @@ jobs:
           make -j$(nproc)
           make DESTDIR="${ROOT_DIR}/deps/sqlite3" install
           cd "${ROOT_DIR}/deps"
-          tar -czf "sqlite3-${SQLITE3_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C sqlite3 .
+          tar -czf "${ROOT_DIR}/releases/sqlite3-${SQLITE3_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C sqlite3 .
+
+      - name: Create release
+        run: |
+          cd deps
+          mkdir -p aria2-deps
+
+          tar -xzf "${ROOT_DIR}/releases/libxml2-${LIBXML2_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps
+          tar -xzf "${ROOT_DIR}/releases/libc-ares-${LIBCARES2_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps
+          tar -xzf "${ROOT_DIR}/releases/openssl-${OPENSSL_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps
+          tar -xzf "${ROOT_DIR}/releases/libssh2-${LIBSSH2_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps
+          tar -xzf "${ROOT_DIR}/releases/sqlite3-${SQLITE3_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps
+
+          tar -czf "${ROOT_DIR}/releases/aria2-deps-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps .
 
       - uses: softprops/action-gh-release@v1
         with:
-          files: deps/*.tar.gz
+          files: releases/*.tar.gz
