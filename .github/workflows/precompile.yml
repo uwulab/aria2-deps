@@ -395,7 +395,7 @@ jobs:
               -D LIBXML2_WITH_PYTHON=OFF \
               -D LIBXML2_WITH_ZLIB=OFF "${{ matrix.pair.cmake_osx_arch }}"
           cd libxml2-build && \
-              make -j$(nproc) && \
+              make -j$(sysctl -n hw.ncpu) && \
               make DESTDIR="${ROOT_DIR}/deps/libxml2" install
           cd "${ROOT_DIR}/deps"
           tar -czf "${ROOT_DIR}/releases/libxml2-${LIBXML2_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C libxml2 .
@@ -423,7 +423,7 @@ jobs:
           tar -xzf "tarballs/libc-ares-${LIBCARES2_VERSION}.tar.gz" -C src
           cd "src/c-ares-${LIBCARES2_VERSION}"
           ./configure "${CONFIGURE_HOST}" --prefix=/usr/local --enable-shared=no --enable-static=yes
-          make -j$(nproc) && \
+          make -j$(sysctl -n hw.ncpu) && \
               make DESTDIR="${ROOT_DIR}/deps/libc-ares" install
           cd "${ROOT_DIR}/deps"
           tar -czf "${ROOT_DIR}/releases/libc-ares-${LIBCARES2_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C libc-ares .
@@ -444,7 +444,7 @@ jobs:
           tar -xzf "tarballs/openssl-${OPENSSL_VERSION}.tar.gz" -C src
           cd "src/openssl-${OPENSSL_VERSION}"
           ./Configure "${CONFIGURE_PARAM}" --prefix=/usr/local no-shared
-          make -j$(nproc)
+          make -j$(sysctl -n hw.ncpu)
           make DESTDIR="${ROOT_DIR}/deps/openssl" install_sw
           cd "${ROOT_DIR}/deps"
           tar -czf "${ROOT_DIR}/releases/openssl-${OPENSSL_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C openssl .
@@ -474,7 +474,7 @@ jobs:
             --disable-sshd-tests \
             --disable-examples-build \
             --enable-shared=no "${CONFIGURE_HOST}"
-          make -j$(nproc)
+          make -j$(sysctl -n hw.ncpu)
           make DESTDIR="${ROOT_DIR}/deps/libssh2" install
           cd "${ROOT_DIR}/deps"
           tar -czf "${ROOT_DIR}/releases/libssh2-${LIBSSH2_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C libssh2 .
@@ -501,7 +501,7 @@ jobs:
           tar -xzf "tarballs/sqlite-autoconf-${SQLITE3_VERSION}.tar.gz" -C src
           cd "src/sqlite-autoconf-${SQLITE3_VERSION}"
           ./configure --enable-shared=no "${CONFIGURE_HOST}"
-          make -j$(nproc)
+          make -j$(sysctl -n hw.ncpu)
           make DESTDIR="${ROOT_DIR}/deps/sqlite3" install
           cd "${ROOT_DIR}/deps"
           tar -czf "${ROOT_DIR}/releases/sqlite3-${SQLITE3_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C sqlite3 .
