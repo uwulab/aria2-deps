@@ -151,7 +151,7 @@ jobs:
               make -j${NPROC} && \
               make DESTDIR="${ROOT_DIR}/deps/libxml2" install
           cd "${ROOT_DIR}/deps"
-          tar -czf "libxml2-${LIBXML2_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C libxml2
+          tar -czf "libxml2-${LIBXML2_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C libxml2 .
 
       - name: Cache compiled libc-ares
         uses: actions/cache@v3
@@ -160,7 +160,7 @@ jobs:
           path: |
             ~/deps/libc-ares-${{ env.LIBCARES2_VERSION }}-${{ matrix.pair.arch }}.tar.gz
           key: deps-libc-ares-${{ env.LIBCARES2_VERSION }}-${{ matrix.pair.arch }}
-      - name: Compile libxml2
+      - name: Compile libc-ares
         if: steps.cache-libc-ares-compiled-linux.outputs.cache-hit != 'true'
         run: |
           export ROOT_DIR=$(pwd)
@@ -174,7 +174,7 @@ jobs:
               make DESTDIR="${ROOT_DIR}/deps/libc-ares" install
           cd "${ROOT_DIR}"
           cd "${ROOT_DIR}/deps"
-          tar -czf "libc-ares-${LIBCARES2_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C libc-ares
+          tar -czf "libc-ares-${LIBCARES2_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C libc-ares .
 
       - uses: softprops/action-gh-release@v1
         with:
