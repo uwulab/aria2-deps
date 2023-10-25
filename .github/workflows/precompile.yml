@@ -510,7 +510,7 @@ jobs:
         run: |
           export ROOT_DIR=$(pwd)
           export CONFIGURE_HOST=""
-          if [ "${{ matrix.pair.arch }}" != "x86_64-linux-gnu" ]; then
+          if [ "${{ matrix.pair.arch }}" != "x86_64-apple-darwin" ]; then
             export CONFIGURE_HOST="--host=${{ matrix.pair.arch }}"
             export CC="gcc -arch arm64"
             export CXX="g++ -arch arm64"
