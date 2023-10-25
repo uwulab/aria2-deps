@@ -24,14 +24,42 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
+      fail-fast: false
       matrix:
-        arch: [x86_64, aarch64]
+        include:
+          - pair:
+              arch: x86_64-linux-gnu
+              cc: gcc
+              cpp: g++
+          - pair:
+              arch: aarch64-linux-gnu
+              cc: gcc-aarch64-linux-gnu
+              cpp: g++-aarch64-linux-gnu
+              cmake_toolchain_file: cc_toolchain/aarch64-linux-gnu.cmake
+          - pair:
+              arch: armv7l-linux-gnueabihf
+              cc: gcc-arm-linux-gnueabihf
+              cpp: g++-arm-linux-gnueabihf
+              cmake_toolchain_file: cc_toolchain/armv7l-linux-gnueabihf.cmake
+          - pair:
+              arch: riscv64-linux-gnu
+              cc: gcc-riscv64-linux-gnu
+              cpp: g++-riscv64-linux-gnu
+              cmake_toolchain_file: cc_toolchain/riscv64-linux-gnu.cmake
+
+    name: ${{ matrix.pair.arch }}
 
     steps:
       - uses: actions/checkout@v4
-      - name: Create src directory
+      - name: Create directories
         run: |
           mkdir -p "src"
+          mkdir -p "tarballs"
+          mkdir -p "deps"
+      - name: Install C Compiler
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ${{ matrix.pair.cc }} ${{ matrix.pair.cpp }}
 
       - name: Cache libxml2
         uses: actions/cache@v3
@@ -92,20 +120,24 @@ jobs:
         if: steps.cache-sqlite3.outputs.cache-hit != 'true'
         run: |
           curl -fSL "https://www.sqlite.org/2023/sqlite-autoconf-${SQLITE3_VERSION}.tar.gz" -o "tarballs/sqlite-autoconf-${SQLITE3_VERSION}.tar.gz"
-      
+
       - name: Cache compiled libxml2
         uses: actions/cache@v3
         id: cache-libxml2-compiled-linux
         with:
           path: |
-            ~/deps/libxml2-${{ env.LIBXML2_VERSION }}-linux-${{ matrix.arch }}-gnu.tar.gz
-          key: deps-libxml2-${{ env.LIBXML2_VERSION }}-linux-${{ matrix.arch }}-gnu
+            ~/deps/libxml2-${{ env.LIBXML2_VERSION }}-${{ matrix.pair.arch }}.tar.gz
+          key: deps-libxml2-${{ env.LIBXML2_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile libxml2
-        if: steps.cache-libxml2-compiled-linux-${{ matrix.arch }}-gnu.outputs.cache-hit != 'true'
+        if: steps.cache-libxml2-compiled-linux.outputs.cache-hit != 'true'
         run: |
           export ROOT_DIR=$(pwd)
           tar -xzf "tarballs/libxml2-v${LIBXML2_VERSION}.tar.gz" -C src
           cd "src/libxml2-${LIBXML2_VERSION}"
+          export CMAKE_TOOLCHAIN_FILE=-DCMAKE_TOOLCHAIN_FILE=${{ matrix.pair.cmake_toolchain_file }}
+          if [ -z "${{ matrix.pair.cmake_toolchain_file }}" ]; then
+            export CMAKE_TOOLCHAIN_FILE=""
+          fi
           cmake -S . -B libxml2-build \
               -D BUILD_SHARED_LIBS=OFF \
               -D CMAKE_BUILD_TYPE=Release \
@@ -113,12 +145,35 @@ jobs:
               -D LIBXML2_WITH_ICONV=OFF \
               -D LIBXML2_WITH_LZMA=OFF \
               -D LIBXML2_WITH_PYTHON=OFF \
-              -D LIBXML2_WITH_ZLIB=OFF
+              -D LIBXML2_WITH_ZLIB=OFF "${CMAKE_TOOLCHAIN_FILE}"
           cd libxml2-build && \
               make -j${NPROC} && \
               make DESTDIR="${ROOT_DIR}/deps/libxml2" install
           cd "${ROOT_DIR}/deps"
-          tar -czf "libxml2-${LIBXML2_VERSION}-linux-${{ matrix.arch }}-gnu.tar.gz" -C libxml2
+          tar -czf "libxml2-${LIBXML2_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C libxml2
+
+      - name: Cache compiled libc-ares
+        uses: actions/cache@v3
+        id: cache-libc-ares-compiled-linux
+        with:
+          path: |
+            ~/deps/libc-ares-${{ env.LIBCARES2_VERSION }}-${{ matrix.pair.arch }}.tar.gz
+          key: deps-libc-ares-${{ env.LIBCARES2_VERSION }}-${{ matrix.pair.arch }}
+      - name: Compile libxml2
+        if: steps.cache-libc-ares-compiled-linux.outputs.cache-hit != 'true'
+        run: |
+          export ROOT_DIR=$(pwd)
+          export CC=${{ matrix.pair.cc }}
+          export CXX=${{ matrix.pair.cpp }}
+          export CPP=${{ matrix.pair.cpp }}
+          tar -xzf "tarballs/libc-ares-${LIBCARES2_VERSION}.tar.gz" -C src
+          cd "src/c-ares-${LIBCARES2_VERSION}"
+          ./configure --prefix=/usr/local --enable-shared=no --enable-static=yes
+          make -j${NPROC} && \
+              make DESTDIR="${ROOT_DIR}/deps/libc-ares" install
+          cd "${ROOT_DIR}"
+          cd "${ROOT_DIR}/deps"
+          tar -czf "libc-ares-${LIBCARES2_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C libc-ares
 
       - uses: softprops/action-gh-release@v1
         with:
