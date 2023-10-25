@@ -50,7 +50,7 @@ jobs:
               cc: gcc-riscv64-linux-gnu
               cpp: g++-riscv64-linux-gnu
               openssl_configure: linux64-riscv64
-              openssl_prefix: "--cross-compile-prefix=/usr/bin/riscv64-linux-gnueabihf-"
+              openssl_prefix: "--cross-compile-prefix=/usr/bin/riscv64-linux-gnu-"
               cmake_toolchain_file: cc_toolchain/riscv64-linux-gnu.cmake
 
     name: ${{ matrix.pair.arch }}
