@@ -224,7 +224,7 @@ jobs:
             export CONFIGURE_HOST="--host=${{ matrix.pair.arch }}"
           fi
           tar -xzf "tarballs/libssh2-${LIBSSH2_VERSION}.tar.gz" -C src
-          cd "libssh2-${LIBSSH2_VERSION}"
+          cd "src/libssh2-${LIBSSH2_VERSION}"
           ./configure --with-crypto=openssl \
             --with-libssl-prefix="${ROOT_DIR}/deps/openssl/usr/local" \
             --with-libgcrypt-prefix="${ROOT_DIR}/deps/openssl/usr/local" \
