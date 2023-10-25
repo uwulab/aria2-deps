@@ -261,7 +261,7 @@ jobs:
           cd "${ROOT_DIR}/deps"
           tar -czf "${ROOT_DIR}/releases/sqlite3-${SQLITE3_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C sqlite3 .
 
-      - name: Create release
+      - name: Create release - phase 1
         run: |
           export ROOT_DIR=$(pwd)
           cd deps
@@ -272,6 +272,22 @@ jobs:
           tar -xzf "${ROOT_DIR}/releases/openssl-${OPENSSL_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps
           tar -xzf "${ROOT_DIR}/releases/libssh2-${LIBSSH2_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps
           tar -xzf "${ROOT_DIR}/releases/sqlite3-${SQLITE3_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps
+
+      - name: Git Clone uwulab version of aria2
+        run: |
+          export ROOT_DIR=$(pwd)
+          sudo tar -xzf "${ROOT_DIR}/releases/aria2-deps-${{ matrix.pair.arch }}.tar.gz" -C / .
+          rm -rf src/aria2
+          git clone --branch uwulab --depth 1 https://github.com/uwulab/aria2.git src/aria2
+          cd src/aria2
+          ./configure --enable-static --enable-libaria2 ARIA2_STATIC=yes
+          make -j$(nproc)
+          make DESTDIR="${ROOT_DIR}/deps/aria2" install
+          cd "${ROOT_DIR}/deps"
+          tar -czf "${ROOT_DIR}/releases/libaria2-${{ matrix.pair.arch }}.tar.gz" -C aria2 .
+
+          cd "${ROOT_DIR}/deps"
+          tar -xzf "${ROOT_DIR}/releases/libaria2-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps
 
           tar -czf "${ROOT_DIR}/releases/aria2-deps-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps .
 
@@ -506,7 +522,7 @@ jobs:
           cd "${ROOT_DIR}/deps"
           tar -czf "${ROOT_DIR}/releases/sqlite3-${SQLITE3_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C sqlite3 .
 
-      - name: Create release
+      - name: Create release - phase 1
         run: |
           export ROOT_DIR=$(pwd)
           cd deps
@@ -517,6 +533,24 @@ jobs:
           tar -xzf "${ROOT_DIR}/releases/openssl-${OPENSSL_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps
           tar -xzf "${ROOT_DIR}/releases/libssh2-${LIBSSH2_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps
           tar -xzf "${ROOT_DIR}/releases/sqlite3-${SQLITE3_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps
+
+          tar -czf "${ROOT_DIR}/releases/aria2-deps-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps .
+
+      - name: Git Clone uwulab version of aria2
+        run: |
+          export ROOT_DIR=$(pwd)
+          sudo tar -xzf "${ROOT_DIR}/releases/aria2-deps-${{ matrix.pair.arch }}.tar.gz" -C / .
+          rm -rf src/aria2
+          git clone --branch uwulab --depth 1 https://github.com/uwulab/aria2.git src/aria2
+          cd src/aria2
+          ./configure --enable-static --enable-libaria2 ARIA2_STATIC=yes
+          make -j$(nproc)
+          make DESTDIR="${ROOT_DIR}/deps/aria2" install
+          cd "${ROOT_DIR}/deps"
+          tar -czf "${ROOT_DIR}/releases/libaria2-${{ matrix.pair.arch }}.tar.gz" -C aria2 .
+
+          cd "${ROOT_DIR}/deps"
+          tar -xzf "${ROOT_DIR}/releases/libaria2-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps
 
           tar -czf "${ROOT_DIR}/releases/aria2-deps-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps .
 
