@@ -153,6 +153,7 @@ jobs:
               -D LIBXML2_WITH_ICONV=OFF \
               -D LIBXML2_WITH_LZMA=OFF \
               -D LIBXML2_WITH_PYTHON=OFF \
+              -D CMAKE_C_FLAGS="-fPIC" \
               -D LIBXML2_WITH_ZLIB=OFF "${CMAKE_TOOLCHAIN_FILE}"
           cd libxml2-build && \
               make -j$(nproc) && \
@@ -177,6 +178,7 @@ jobs:
           fi
           tar -xzf "tarballs/libc-ares-${LIBCARES2_VERSION}.tar.gz" -C src
           cd "src/c-ares-${LIBCARES2_VERSION}"
+          export CFLAGS="-fPIC"
           ./configure "${CONFIGURE_HOST}" --prefix=/usr/local --enable-shared=no --enable-static=yes
           make -j$(nproc) && \
               make DESTDIR="${ROOT_DIR}/deps/libc-ares" install
@@ -203,6 +205,7 @@ jobs:
           fi
           tar -xzf "tarballs/openssl-${OPENSSL_VERSION}.tar.gz" -C src
           cd "src/openssl-${OPENSSL_VERSION}"
+          export CFLAGS="-fPIC"
           ./Configure "${CONFIGURE_PARAM}" "${CONFIGURE_PREFIX}" --prefix=/usr/local -static
           make -j$(nproc)
           make DESTDIR="${ROOT_DIR}/deps/openssl" install_sw
@@ -226,6 +229,7 @@ jobs:
           fi
           tar -xzf "tarballs/libssh2-${LIBSSH2_VERSION}.tar.gz" -C src
           cd "src/libssh2-${LIBSSH2_VERSION}"
+          export CFLAGS="-fPIC"
           ./configure --with-crypto=openssl \
             --with-libssl-prefix="${ROOT_DIR}/deps/openssl/usr/local" \
             --with-libgcrypt-prefix="${ROOT_DIR}/deps/openssl/usr/local" \
@@ -255,6 +259,7 @@ jobs:
           fi
           tar -xzf "tarballs/sqlite-autoconf-${SQLITE3_VERSION}.tar.gz" -C src
           cd "src/sqlite-autoconf-${SQLITE3_VERSION}"
+          export CFLAGS="-fPIC"
           ./configure --enable-shared=no "${CONFIGURE_HOST}"
           make -j$(nproc)
           make DESTDIR="${ROOT_DIR}/deps/sqlite3" install
@@ -557,7 +562,7 @@ jobs:
             export CC="gcc -arch arm64"
             export CXX="g++ -arch arm64"
             export CFLAGS="-arch arm64 -mmacosx-version-min=11.0 -target arm64-apple-macos11"
-            export LDFLAGS="-arch arm64 -mmacosx-version-min=11.0 -target arm64-apple-macos11"
+            export LDFLAGS="-arch arm64 -mmacosx-version-min=11.0 -target arm64-apple-macos11 -L/usr/local/lib -lcrypto -lxml2"
           fi
           autoreconf -i
           ./configure --enable-static --enable-libaria2 ${CONFIGURE_HOST} ARIA2_STATIC=yes
