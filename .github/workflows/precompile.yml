@@ -549,6 +549,7 @@ jobs:
           rm -rf src/aria2
           git clone --branch uwulab --depth 1 https://github.com/uwulab/aria2.git src/aria2
           cd src/aria2
+          brew install automake
           autoreconf -i
           ./configure --enable-static --enable-libaria2 ARIA2_STATIC=yes
           make -j$(nproc)
