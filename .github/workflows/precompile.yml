@@ -195,12 +195,14 @@ jobs:
         run: |
           export ROOT_DIR=$(pwd)
           export CONFIGURE_PARAM=""
+          export CONFIGURE_PREFIX=""
           if [ "${{ matrix.pair.arch }}" != "x86_64-linux-gnu" ]; then
-            export CONFIGURE_PARAM="${{ matrix.pair.openssl_configure }} ${{ matrix.pair.openssl_prefix }}"
+            export CONFIGURE_PARAM="${{ matrix.pair.openssl_configure }}"
+            export CONFIGURE_PREFIX="${{ matrix.pair.openssl_prefix }}"
           fi
           tar -xzf "tarballs/openssl-${OPENSSL_VERSION}.tar.gz" -C src
           cd "src/openssl-${OPENSSL_VERSION}"
-          ./Configure "${CONFIGURE_PARAM}" --prefix=/usr/local -static
+          ./Configure "${CONFIGURE_PARAM}" "${CONFIGURE_PREFIX}" --prefix=/usr/local -static
           make -j$(nproc)
           make DESTDIR="${ROOT_DIR}/deps/openssl" install_sw
           cd "${ROOT_DIR}/deps"
