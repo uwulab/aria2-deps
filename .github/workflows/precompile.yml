@@ -273,6 +273,8 @@ jobs:
           tar -xzf "${ROOT_DIR}/releases/libssh2-${LIBSSH2_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps
           tar -xzf "${ROOT_DIR}/releases/sqlite3-${SQLITE3_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps
 
+          tar -czf "${ROOT_DIR}/releases/aria2-deps-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps .
+
       - name: Git Clone uwulab version of aria2
         run: |
           export ROOT_DIR=$(pwd)
