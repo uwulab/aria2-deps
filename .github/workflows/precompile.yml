@@ -252,7 +252,7 @@ jobs:
           if [ "${{ matrix.pair.arch }}" != "x86_64-linux-gnu" ]; then
             export CONFIGURE_HOST="--host=${{ matrix.pair.arch }}"
           fi
-          tar -xzf "sqlite-autoconf-${SQLITE3_VERSION}.tar.gz" -C src
+          tar -xzf "tarballs/sqlite-autoconf-${SQLITE3_VERSION}.tar.gz" -C src
           cd "src/sqlite-autoconf-${SQLITE3_VERSION}"
           ./configure --enable-shared=no "${CONFIGURE_HOST}"
           make -j$(nproc)
