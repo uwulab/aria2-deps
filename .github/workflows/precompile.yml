@@ -131,13 +131,13 @@ jobs:
 
       - name: Cache compiled libxml2
         uses: actions/cache@v3
-        id: cache-libxml2-compiled
+        id: cache-libxml2-shared
         with:
           path: |
             releases/libxml2-${{ env.LIBXML2_VERSION }}-${{ matrix.pair.arch }}.tar.gz
           key: releases-libxml2-${{ env.LIBXML2_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile libxml2
-        if: steps.cache-libxml2-compiled.outputs.cache-hit != 'true'
+        if: steps.cache-libxml2-shared.outputs.cache-hit != 'true'
         run: |
           export ROOT_DIR=$(pwd)
           tar -xzf "tarballs/libxml2-v${LIBXML2_VERSION}.tar.gz" -C src
@@ -147,7 +147,7 @@ jobs:
             export CMAKE_TOOLCHAIN_FILE=""
           fi
           cmake -S . -B libxml2-build \
-              -D BUILD_SHARED_LIBS=OFF \
+              -D BUILD_STATIC_LIBS=OFF \
               -D CMAKE_BUILD_TYPE=Release \
               -D CMAKE_INSTALL_PREFIX=/usr/local \
               -D LIBXML2_WITH_ICONV=OFF \
@@ -163,13 +163,13 @@ jobs:
 
       - name: Cache compiled libc-ares
         uses: actions/cache@v3
-        id: cache-libc-ares-compiled
+        id: cache-libc-ares-shared
         with:
           path: |
             releases/libc-ares-${{ env.LIBCARES2_VERSION }}-${{ matrix.pair.arch }}.tar.gz
           key: releases-libc-ares-${{ env.LIBCARES2_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile libc-ares
-        if: steps.cache-libc-ares-compiled.outputs.cache-hit != 'true'
+        if: steps.cache-libc-ares-shared.outputs.cache-hit != 'true'
         run: |
           export ROOT_DIR=$(pwd)
           export CONFIGURE_HOST=""
@@ -179,7 +179,7 @@ jobs:
           tar -xzf "tarballs/libc-ares-${LIBCARES2_VERSION}.tar.gz" -C src
           cd "src/c-ares-${LIBCARES2_VERSION}"
           export CFLAGS="-fPIC"
-          ./configure "${CONFIGURE_HOST}" --prefix=/usr/local --enable-shared=no --enable-static=yes
+          ./configure "${CONFIGURE_HOST}" --prefix=/usr/local --enable-shared=yes --enable-static=no
           make -j$(nproc) && \
               make DESTDIR="${ROOT_DIR}/deps/libc-ares" install
           cd "${ROOT_DIR}/deps"
@@ -187,14 +187,14 @@ jobs:
 
       - name: Cache compiled openssl
         uses: actions/cache@v3
-        id: cache-openssl-compiled
+        id: cache-openssl-shared
         with:
           path: |
             releases/openssl-${{ env.OPENSSL_VERSION }}-${{ matrix.pair.arch }}.tar.gz
             deps/openssl/
           key: releases-openssl-${{ env.OPENSSL_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile openssl
-        if: steps.cache-openssl-compiled.outputs.cache-hit != 'true'
+        if: steps.cache-openssl-shared.outputs.cache-hit != 'true'
         run: |
           export ROOT_DIR=$(pwd)
           export CONFIGURE_PARAM=""
@@ -206,7 +206,7 @@ jobs:
           tar -xzf "tarballs/openssl-${OPENSSL_VERSION}.tar.gz" -C src
           cd "src/openssl-${OPENSSL_VERSION}"
           export CFLAGS="-fPIC"
-          ./Configure "${CONFIGURE_PARAM}" "${CONFIGURE_PREFIX}" --prefix=/usr/local -static
+          ./Configure "${CONFIGURE_PARAM}" "${CONFIGURE_PREFIX}" --prefix=/usr/local
           make -j$(nproc)
           make DESTDIR="${ROOT_DIR}/deps/openssl" install_sw
           cd "${ROOT_DIR}/deps"
@@ -214,13 +214,13 @@ jobs:
 
       - name: Cache compiled libssh2
         uses: actions/cache@v3
-        id: cache-libssh2-compiled
+        id: cache-libssh2-shared
         with:
           path: |
             releases/libssh2-${{ env.LIBSSH2_VERSION }}-${{ matrix.pair.arch }}.tar.gz
           key: releases-libssh2-${{ env.LIBSSH2_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile libssh2
-        if: steps.cache-libssh2-compiled.outputs.cache-hit != 'true'
+        if: steps.cache-libssh2-shared.outputs.cache-hit != 'true'
         run: |
           export ROOT_DIR=$(pwd)
           export CONFIGURE_HOST=""
@@ -236,7 +236,7 @@ jobs:
             --disable-tests \
             --disable-sshd-tests \
             --disable-examples-build \
-            --enable-shared=no "${CONFIGURE_HOST}"
+            --enable-shared=yes --enable-static=no "${CONFIGURE_HOST}"
           make -j$(nproc)
           make DESTDIR="${ROOT_DIR}/deps/libssh2" install
           cd "${ROOT_DIR}/deps"
@@ -244,13 +244,13 @@ jobs:
 
       - name: Cache compiled sqlite3
         uses: actions/cache@v3
-        id: cache-sqlite3-compiled
+        id: cache-sqlite3-shared
         with:
           path: |
             releases/sqlite3-${{ env.SQLITE3_VERSION }}-${{ matrix.pair.arch }}.tar.gz
           key: releases-sqlite3-${{ env.SQLITE3_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile sqlite3
-        if: steps.cache-sqlite3-compiled.outputs.cache-hit != 'true'
+        if: steps.cache-sqlite3-shared.outputs.cache-hit != 'true'
         run: |
           export ROOT_DIR=$(pwd)
           export CONFIGURE_HOST=""
@@ -260,7 +260,7 @@ jobs:
           tar -xzf "tarballs/sqlite-autoconf-${SQLITE3_VERSION}.tar.gz" -C src
           cd "src/sqlite-autoconf-${SQLITE3_VERSION}"
           export CFLAGS="-fPIC"
-          ./configure --enable-shared=no "${CONFIGURE_HOST}"
+          ./configure --enable-shared=yes --enable-static=no "${CONFIGURE_HOST}"
           make -j$(nproc)
           make DESTDIR="${ROOT_DIR}/deps/sqlite3" install
           cd "${ROOT_DIR}/deps"
@@ -400,13 +400,13 @@ jobs:
 
       - name: Cache compiled libxml2
         uses: actions/cache@v3
-        id: cache-libxml2-compiled
+        id: cache-libxml2-shared
         with:
           path: |
             releases/libxml2-${{ env.LIBXML2_VERSION }}-${{ matrix.pair.arch }}.tar.gz
           key: releases-libxml2-${{ env.LIBXML2_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile libxml2
-        if: steps.cache-libxml2-compiled.outputs.cache-hit != 'true'
+        if: steps.cache-libxml2-shared.outputs.cache-hit != 'true'
         run: |
           export ROOT_DIR=$(pwd)
           tar -xzf "tarballs/libxml2-v${LIBXML2_VERSION}.tar.gz" -C src
@@ -416,7 +416,7 @@ jobs:
             export CMAKE_TOOLCHAIN_FILE=""
           fi
           cmake -S . -B libxml2-build \
-              -D BUILD_SHARED_LIBS=OFF \
+              -D BUILD_STATIC_LIBS=OFF \
               -D CMAKE_BUILD_TYPE=Release \
               -D CMAKE_INSTALL_PREFIX=/usr/local \
               -D LIBXML2_WITH_ICONV=OFF \
@@ -431,13 +431,13 @@ jobs:
 
       - name: Cache compiled libc-ares
         uses: actions/cache@v3
-        id: cache-libc-ares-compiled
+        id: cache-libc-ares-shared
         with:
           path: |
             releases/libc-ares-${{ env.LIBCARES2_VERSION }}-${{ matrix.pair.arch }}.tar.gz
           key: releases-libc-ares-${{ env.LIBCARES2_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile libc-ares
-        if: steps.cache-libc-ares-compiled.outputs.cache-hit != 'true'
+        if: steps.cache-libc-ares-shared.outputs.cache-hit != 'true'
         run: |
           export ROOT_DIR=$(pwd)
           export CONFIGURE_HOST=""
@@ -451,7 +451,7 @@ jobs:
           fi
           tar -xzf "tarballs/libc-ares-${LIBCARES2_VERSION}.tar.gz" -C src
           cd "src/c-ares-${LIBCARES2_VERSION}"
-          ./configure "${CONFIGURE_HOST}" --prefix=/usr/local --enable-shared=no --enable-static=yes
+          ./configure "${CONFIGURE_HOST}" --prefix=/usr/local --enable-shared=yes --enable-static=no
           make -j$(sysctl -n hw.ncpu) && \
               make DESTDIR="${ROOT_DIR}/deps/libc-ares" install
           cd "${ROOT_DIR}/deps"
@@ -459,20 +459,20 @@ jobs:
 
       - name: Cache compiled openssl
         uses: actions/cache@v3
-        id: cache-openssl-compiled
+        id: cache-openssl-shared
         with:
           path: |
             releases/openssl-${{ env.OPENSSL_VERSION }}-${{ matrix.pair.arch }}.tar.gz
             deps/openssl/
           key: releases-openssl-${{ env.OPENSSL_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile openssl
-        if: steps.cache-openssl-compiled.outputs.cache-hit != 'true'
+        if: steps.cache-openssl-shared.outputs.cache-hit != 'true'
         run: |
           export ROOT_DIR=$(pwd)
           export CONFIGURE_PARAM="${{ matrix.pair.openssl_configure }}"
           tar -xzf "tarballs/openssl-${OPENSSL_VERSION}.tar.gz" -C src
           cd "src/openssl-${OPENSSL_VERSION}"
-          ./Configure "${CONFIGURE_PARAM}" --prefix=/usr/local no-shared
+          ./Configure "${CONFIGURE_PARAM}" --prefix=/usr/local
           make -j$(sysctl -n hw.ncpu)
           make DESTDIR="${ROOT_DIR}/deps/openssl" install_sw
           cd "${ROOT_DIR}/deps"
@@ -480,13 +480,13 @@ jobs:
 
       - name: Cache compiled libssh2
         uses: actions/cache@v3
-        id: cache-libssh2-compiled
+        id: cache-libssh2-shared
         with:
           path: |
             releases/libssh2-${{ env.LIBSSH2_VERSION }}-${{ matrix.pair.arch }}.tar.gz
           key: releases-libssh2-${{ env.LIBSSH2_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile libssh2
-        if: steps.cache-libssh2-compiled.outputs.cache-hit != 'true'
+        if: steps.cache-libssh2-shared.outputs.cache-hit != 'true'
         run: |
           export ROOT_DIR=$(pwd)
           export CONFIGURE_HOST=""
@@ -502,7 +502,7 @@ jobs:
           ./configure --disable-tests \
             --disable-sshd-tests \
             --disable-examples-build \
-            --enable-shared=no "${CONFIGURE_HOST}"
+            --enable-shared=yes --enable-static=no "${CONFIGURE_HOST}"
           make -j$(sysctl -n hw.ncpu)
           make DESTDIR="${ROOT_DIR}/deps/libssh2" install
           cd "${ROOT_DIR}/deps"
@@ -510,13 +510,13 @@ jobs:
 
       - name: Cache compiled sqlite3
         uses: actions/cache@v3
-        id: cache-sqlite3-compiled
+        id: cache-sqlite3-shared
         with:
           path: |
             releases/sqlite3-${{ env.SQLITE3_VERSION }}-${{ matrix.pair.arch }}.tar.gz
           key: releases-sqlite3-${{ env.SQLITE3_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile sqlite3
-        if: steps.cache-sqlite3-compiled.outputs.cache-hit != 'true'
+        if: steps.cache-sqlite3-shared.outputs.cache-hit != 'true'
         run: |
           export ROOT_DIR=$(pwd)
           export CONFIGURE_HOST=""
@@ -529,7 +529,7 @@ jobs:
           fi
           tar -xzf "tarballs/sqlite-autoconf-${SQLITE3_VERSION}.tar.gz" -C src
           cd "src/sqlite-autoconf-${SQLITE3_VERSION}"
-          ./configure --enable-shared=no "${CONFIGURE_HOST}"
+          ./configure --enable-shared=yes --enable-static=no "${CONFIGURE_HOST}"
           make -j$(sysctl -n hw.ncpu)
           make DESTDIR="${ROOT_DIR}/deps/sqlite3" install
           cd "${ROOT_DIR}/deps"
