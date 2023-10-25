@@ -135,7 +135,7 @@ jobs:
           export ROOT_DIR=$(pwd)
           tar -xzf "tarballs/libxml2-v${LIBXML2_VERSION}.tar.gz" -C src
           cd "src/libxml2-${LIBXML2_VERSION}"
-          export CMAKE_TOOLCHAIN_FILE=-DCMAKE_TOOLCHAIN_FILE=${{ matrix.pair.cmake_toolchain_file }}
+          export CMAKE_TOOLCHAIN_FILE=-DCMAKE_TOOLCHAIN_FILE="${ROOT_DIR}/${{ matrix.pair.cmake_toolchain_file }}"
           if [ -z "${{ matrix.pair.cmake_toolchain_file }}" ]; then
             export CMAKE_TOOLCHAIN_FILE=""
           fi
