@@ -243,8 +243,8 @@ jobs:
         id: cache-sqlite3-compiled
         with:
           path: |
-            releases/sqlite3-${{ env.OPENSSL_VERSION }}-${{ matrix.pair.arch }}.tar.gz
-          key: releases-sqlite3-${{ env.OPENSSL_VERSION }}-${{ matrix.pair.arch }}
+            releases/sqlite3-${{ env.SQLITE3_VERSION }}-${{ matrix.pair.arch }}.tar.gz
+          key: releases-sqlite3-${{ env.SQLITE3_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile sqlite3
         if: steps.cache-sqlite3-compiled.outputs.cache-hit != 'true'
         run: |
@@ -500,8 +500,8 @@ jobs:
         id: cache-sqlite3-compiled
         with:
           path: |
-            releases/sqlite3-${{ env.OPENSSL_VERSION }}-${{ matrix.pair.arch }}.tar.gz
-          key: releases-sqlite3-${{ env.OPENSSL_VERSION }}-${{ matrix.pair.arch }}
+            releases/sqlite3-${{ env.SQLITE3_VERSION }}-${{ matrix.pair.arch }}.tar.gz
+          key: releases-sqlite3-${{ env.SQLITE3_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile sqlite3
         if: steps.cache-sqlite3-compiled.outputs.cache-hit != 'true'
         run: |
