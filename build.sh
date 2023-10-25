@@ -68,9 +68,15 @@ if [ ! -f "tarballs/libssh2-${LIBSSH2_VERSION}.tar.gz" ]; then
     curl -fSL "https://libssh2.org/download/libssh2-${LIBSSH2_VERSION}.tar.gz" -o "tarballs/libssh2-${LIBSSH2_VERSION}.tar.gz"
 fi
 tar -xzf "tarballs/libssh2-${LIBSSH2_VERSION}.tar.gz" -C src
-cd "libssh2-${LIBSSH2_VERSION}"
+cd "src/libssh2-${LIBSSH2_VERSION}"
 mkdir build & cd build
-cmake .. -DBUILD_SHARED_LIBS=OFF -DCRYPTO_BACKEND=OpenSSL
+./configure --with-crypto=openssl \
+    --with-libssl-prefix=/tmp/openssl/usr/local \
+    --with-libgcrypt-prefix=/tmp/openssl/usr/local \
+    --disable-tests \
+    --disable-sshd-tests \
+    --disable-examples-build \
+    --enable-shared=no
 make -j${NPROC}
 make DESTDIR="${ROOT_DIR}/deps" install
 cd "${ROOT_DIR}"
