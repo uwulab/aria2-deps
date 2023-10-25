@@ -7,6 +7,10 @@ env:
   LIBCARES2_VERSION="1.20.1"
   SQLITE3_VERSION="3430200"
 
+on:
+  push:
+    tags:
+
 jobs:
   linux:
     strategy:
