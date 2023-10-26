@@ -415,6 +415,18 @@ jobs:
         run: |
           curl -fSL "https://github.com/GNOME/libxml2/archive/refs/tags/v${LIBXML2_VERSION}.tar.gz" -o "tarballs/libxml2-v${LIBXML2_VERSION}.tar.gz"
 
+      - name: Cache zlib
+        uses: actions/cache@v3
+        id: cache-zlib
+        with:
+          path: |
+            tarballs/zlib-${{ env.ZLIB_VERSION }}.tar.gz
+          key: tarballs-zlib-${{ env.ZLIB_VERSION }}
+      - name: Get zlib
+        if: steps.cache-zlib.outputs.cache-hit != 'true'
+        run: |
+          curl -fSL "https://zlib.net/zlib-${ZLIB_VERSION}.tar.gz" -o "tarballs/zlib-${ZLIB_VERSION}.tar.gz"
+
       - name: Cache libc-ares2
         uses: actions/cache@v3
         id: cache-libc-ares2
@@ -479,6 +491,34 @@ jobs:
           git checkout "${{ env.ARIA2_COMMIT }}"
           cd ../..
           mv src/aria2 src/aria2-${{ env.ARIA2_COMMIT }}
+
+      - name: Cache compiled zlib
+        uses: actions/cache@v3
+        id: cache-zlib-shared-macos
+        with:
+          path: |
+            releases/zlib-${{ env.ZLIB_VERSION }}-${{ matrix.pair.arch }}.tar.gz
+            deps/zlib/
+          key: releases-shared-zlib-${{ env.ZLIB_VERSION }}-${{ matrix.pair.arch }}
+      - name: Compile zlib
+        if: steps.cache-zlib-shared-macos.outputs.cache-hit != 'true'
+        run: |
+          export ROOT_DIR=$(pwd)
+          tar -xzf "tarballs/zlib-${ZLIB_VERSION}.tar.gz" -C src
+          cd "src/zlib-${ZLIB_VERSION}"
+          export CFLAGS="-fPIC"
+          if [ "${{ matrix.pair.arch }}" == "arm64-apple-darwin" ]; then
+            export CONFIGURE_HOST="--host=${{ matrix.pair.arch }}"
+            export CC="gcc -arch arm64"
+            export CXX="g++ -arch arm64"
+            export CFLAGS="-arch arm64 -mmacosx-version-min=11.0 -target arm64-apple-macos11 ${CFLAGS}"
+            export LDFLAGS="-arch arm64 -mmacosx-version-min=11.0 -target arm64-apple-macos11"
+          fi
+          ./configure --prefix=/usr/local
+          make -j$(nproc)
+          make DESTDIR="${ROOT_DIR}/deps/zlib" install
+          cd "${ROOT_DIR}/deps"
+          tar -czf "${ROOT_DIR}/releases/zlib-${ZLIB_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C zlib .
 
       - name: Cache compiled libxml2
         uses: actions/cache@v3
@@ -630,6 +670,7 @@ jobs:
           tar -xzf "${ROOT_DIR}/releases/openssl-${OPENSSL_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps
           tar -xzf "${ROOT_DIR}/releases/libssh2-${LIBSSH2_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps
           tar -xzf "${ROOT_DIR}/releases/sqlite3-${SQLITE3_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps
+          tar -xzf "${ROOT_DIR}/releases/zlib-${ZLIB_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps
 
           tar -czf "${ROOT_DIR}/releases/aria2-deps-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps .
 
