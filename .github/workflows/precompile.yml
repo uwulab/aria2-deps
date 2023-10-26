@@ -151,9 +151,9 @@ jobs:
         id: cache-zlib-shared
         with:
           path: |
-            releases/zlib-${{ env.OPENSSL_VERSION }}-${{ matrix.pair.arch }}.tar.gz
+            releases/zlib-${{ env.ZLIB_VERSION }}-${{ matrix.pair.arch }}.tar.gz
             deps/zlib/
-          key: releases-shared-zlib-${{ env.OPENSSL_VERSION }}-${{ matrix.pair.arch }}
+          key: releases-shared-zlib-${{ env.ZLIB_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile zlib
         if: steps.cache-zlib-shared.outputs.cache-hit != 'true'
         run: |
