@@ -161,7 +161,7 @@ jobs:
           git clone https://github.com/uwulab/aria2.git src/aria2
           cd src/aria2
           git checkout "${{ env.ARIA2_COMMIT }}"
-          cd ..
+          cd ../..
           mv src/aria2 src/aria2-${{ env.ARIA2_COMMIT }}
 
       - name: Cache compiled zlib
@@ -476,7 +476,7 @@ jobs:
           git clone https://github.com/uwulab/aria2.git src/aria2
           cd src/aria2
           git checkout "${{ env.ARIA2_COMMIT }}"
-          cd ..
+          cd ../..
           mv src/aria2 src/aria2-${{ env.ARIA2_COMMIT }}
 
       - name: Cache compiled libxml2
