@@ -578,7 +578,7 @@ jobs:
             export CC="gcc -arch arm64"
             export CXX="g++ -arch arm64"
             export CFLAGS="-arch arm64 -mmacosx-version-min=11.0 -target arm64-apple-macos11"
-            export LDFLAGS="-arch arm64 -mmacosx-version-min=11.0 -target arm64-apple-macos11"
+            export LDFLAGS="-arch arm64 -mmacosx-version-min=11.0 -target arm64-apple-macos11 -L${ROOT_DIR}/deps/openssl/usr/local/lib"
             export CONFIGURE_PARAM="--with-libssl-prefix=${ROOT_DIR}/deps/openssl/usr/local --with-libgcrypt-prefix=${ROOT_DIR}/deps/openssl/usr/local"
           fi
           tar -xzf "tarballs/libssh2-${LIBSSH2_VERSION}.tar.gz" -C src
