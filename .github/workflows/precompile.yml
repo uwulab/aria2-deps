@@ -7,6 +7,8 @@ env:
   LIBSSH2_VERSION: "1.11.0"
   LIBCARES2_VERSION: "1.20.1"
   SQLITE3_VERSION: "3430200"
+  ARIA2_COMMIT: "076dea3896dba6a8e2acc683818ff60602efa9d4"
+  ARIA2_COMMIT_SHORT: "076dea3"
 
 on:
   push:
@@ -71,7 +73,7 @@ jobs:
       - name: Install C Compiler
         run: |
           sudo apt-get update
-          sudo apt-get install -y ${{ matrix.pair.cc }} ${{ matrix.pair.cpp }}
+          sudo apt-get install -y ${{ matrix.pair.cc }} ${{ matrix.pair.cpp }} autoconf automake libtool autopoint gettext
 
       - name: Cache zlib
         uses: actions/cache@v3
@@ -145,6 +147,22 @@ jobs:
         if: steps.cache-sqlite3.outputs.cache-hit != 'true'
         run: |
           curl -fSL "https://www.sqlite.org/2023/sqlite-autoconf-${SQLITE3_VERSION}.tar.gz" -o "tarballs/sqlite-autoconf-${SQLITE3_VERSION}.tar.gz"
+
+      - name: Cache aria2
+        uses: actions/cache@v3
+        id: cache-aria2
+        with:
+          path: |
+            src/aria2-${{ env.ARIA2_COMMIT }}
+          key: src-aria2-${{ env.ARIA2_COMMIT }}
+      - name: Get aria2
+        if: steps.cache-aria2.outputs.cache-hit != 'true'
+        run: |
+          git clone https://github.com/uwulab/aria2.git src/aria2
+          cd src/aria2
+          git checkout "${{ env.ARIA2_COMMIT }}"
+          cd ..
+          mv src/aria2 src/aria2-${{ env.ARIA2_COMMIT }}
 
       - name: Cache compiled zlib
         uses: actions/cache@v3
@@ -319,7 +337,14 @@ jobs:
 
           tar -czf "${ROOT_DIR}/releases/aria2-deps-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps .
 
-      - name: Git Clone uwulab version of aria2
+      - name: Cache compiled libaria2
+        uses: actions/cache@v3
+        id: cache-libaria2-shared
+        with:
+          path: |
+            releases/libaria2-${{ env.ARIA2_COMMIT_SHORT }}-${{ matrix.pair.arch }}.tar.gz
+          key: releases-shared-libaria2-${{ env.ARIA2_COMMIT_SHORT }}-${{ matrix.pair.arch }}
+      - name: Compile libaria2
         run: |
           export ROOT_DIR=$(pwd)
           export CONFIGURE_HOST=""
@@ -327,21 +352,20 @@ jobs:
             export CONFIGURE_HOST="--host=${{ matrix.pair.arch }}"
           fi
           sudo tar -xzf "${ROOT_DIR}/releases/aria2-deps-${{ matrix.pair.arch }}.tar.gz" -C /
-          rm -rf src/aria2
-          git clone --branch uwulab --depth 1 https://github.com/uwulab/aria2.git src/aria2
-          cd src/aria2
-          sudo apt install -y autoconf automake libtool autopoint gettext
+          cd "src/aria2-${{ env.ARIA2_COMMIT }}"
           autoreconf -i
           export ZLIB_LIBS="-L${ROOT_DIR}/deps/aria2-deps/usr/local/lib -lz"
+          export LDFLAGS="-Wl,-rpath,\$ORIGIN/lib:\$ORIGIN/lib64"
           ./configure --enable-shared --enable-libaria2 "${CONFIGURE_HOST}"
           make -j$(nproc)
           make DESTDIR="${ROOT_DIR}/deps/aria2" install
           cd "${ROOT_DIR}/deps"
-          tar -czf "${ROOT_DIR}/releases/libaria2-${{ matrix.pair.arch }}.tar.gz" -C aria2 .
+          tar -czf "${ROOT_DIR}/releases/libaria2-${{ env.ARIA2_COMMIT_SHORT }}-${{ matrix.pair.arch }}.tar.gz" -C aria2 .
 
+      - name: Create release - phase 2
+        run: |
           cd "${ROOT_DIR}/deps"
-          tar -xzf "${ROOT_DIR}/releases/libaria2-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps
-
+          tar -xzf "${ROOT_DIR}/releases/libaria2-${{ env.ARIA2_COMMIT_SHORT }}-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps
           tar -czf "${ROOT_DIR}/releases/aria2-deps-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps .
 
       - uses: softprops/action-gh-release@v1
