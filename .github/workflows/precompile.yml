@@ -364,6 +364,7 @@ jobs:
 
       - name: Create release - phase 2
         run: |
+          export ROOT_DIR=$(pwd)
           cd "${ROOT_DIR}/deps"
           tar -xzf "${ROOT_DIR}/releases/libaria2-${{ env.ARIA2_COMMIT_SHORT }}-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps
           tar -czf "${ROOT_DIR}/releases/aria2-deps-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps .
@@ -461,6 +462,22 @@ jobs:
         if: steps.cache-sqlite3.outputs.cache-hit != 'true'
         run: |
           curl -fSL "https://www.sqlite.org/2023/sqlite-autoconf-${SQLITE3_VERSION}.tar.gz" -o "tarballs/sqlite-autoconf-${SQLITE3_VERSION}.tar.gz"
+
+      - name: Cache aria2
+        uses: actions/cache@v3
+        id: cache-aria2
+        with:
+          path: |
+            src/aria2-${{ env.ARIA2_COMMIT }}
+          key: src-aria2-${{ env.ARIA2_COMMIT }}
+      - name: Get aria2
+        if: steps.cache-aria2.outputs.cache-hit != 'true'
+        run: |
+          git clone https://github.com/uwulab/aria2.git src/aria2
+          cd src/aria2
+          git checkout "${{ env.ARIA2_COMMIT }}"
+          cd ..
+          mv src/aria2 src/aria2-${{ env.ARIA2_COMMIT }}
 
       - name: Cache compiled libxml2
         uses: actions/cache@v3
@@ -613,36 +630,41 @@ jobs:
 
           tar -czf "${ROOT_DIR}/releases/aria2-deps-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps .
 
-      # - name: Git Clone uwulab version of aria2
-      #   run: |
-      #     export ROOT_DIR=$(pwd)
-      #     cd deps
-      #     sudo cp -rf aria2-deps/* /
+      - name: Cache compiled libaria2
+        uses: actions/cache@v3
+        id: cache-libaria2-shared
+        with:
+          path: |
+            releases/libaria2-${{ env.ARIA2_COMMIT_SHORT }}-${{ matrix.pair.arch }}.tar.gz
+          key: releases-shared-libaria2-${{ env.ARIA2_COMMIT_SHORT }}-${{ matrix.pair.arch }}
+      - name: Compile libaria2
+        run: |
+          brew install autoconf automake libtool
+          export ROOT_DIR=$(pwd)
+          export CONFIGURE_HOST=""
+          export LDFLAGS="-Wl,-rpath @loader_path/lib"
+          if [ "${{ matrix.pair.arch }}" != "x86_64-apple-darwin" ]; then
+            export CONFIGURE_HOST="--host=${{ matrix.pair.arch }}"
+            export CC="gcc -arch arm64"
+            export CXX="g++ -arch arm64"
+            export CFLAGS="-arch arm64 -mmacosx-version-min=11.0 -target arm64-apple-macos11"
+            export LDFLAGS="-arch arm64 -mmacosx-version-min=11.0 -target arm64-apple-macos11 -L/usr/local/lib -lcrypto -lxml2 ${LDFLAGS}"
+          fi
+          sudo tar -xzf "${ROOT_DIR}/releases/aria2-deps-${{ matrix.pair.arch }}.tar.gz" -C /
+          cd "src/aria2-${{ env.ARIA2_COMMIT }}"
+          autoreconf -i
+          ./configure --enable-shared --enable-libaria2 "${CONFIGURE_HOST}"
+          make -j$(nproc)
+          make DESTDIR="${ROOT_DIR}/deps/aria2" install
+          cd "${ROOT_DIR}/deps"
+          tar -czf "${ROOT_DIR}/releases/libaria2-${{ env.ARIA2_COMMIT_SHORT }}-${{ matrix.pair.arch }}.tar.gz" -C aria2 .
 
-      #     cd "${ROOT_DIR}"
-      #     rm -rf src/aria2
-      #     git clone --branch uwulab --depth 1 https://github.com/uwulab/aria2.git src/aria2
-      #     cd src/aria2
-      #     brew install autoconf automake libtool
-      #     export CONFIGURE_HOST=""
-      #     if [ "${{ matrix.pair.arch }}" != "x86_64-apple-darwin" ]; then
-      #       export CONFIGURE_HOST="--host=${{ matrix.pair.arch }}"
-      #       export CC="gcc -arch arm64"
-      #       export CXX="g++ -arch arm64"
-      #       export CFLAGS="-arch arm64 -mmacosx-version-min=11.0 -target arm64-apple-macos11"
-      #       export LDFLAGS="-arch arm64 -mmacosx-version-min=11.0 -target arm64-apple-macos11 -L/usr/local/lib -lcrypto -lxml2"
-      #     fi
-      #     autoreconf -i
-      #     ./configure --enable-static --enable-libaria2 ${CONFIGURE_HOST} ARIA2_STATIC=yes
-      #     make -j$(nproc)
-      #     make DESTDIR="${ROOT_DIR}/deps/aria2" install
-      #     cd "${ROOT_DIR}/deps"
-      #     tar -czf "${ROOT_DIR}/releases/libaria2-${{ matrix.pair.arch }}.tar.gz" -C aria2 .
-
-      #     cd "${ROOT_DIR}/deps"
-      #     tar -xzf "${ROOT_DIR}/releases/libaria2-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps
-
-      #     tar -czf "${ROOT_DIR}/releases/aria2-deps-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps .
+      - name: Create release - phase 2
+        run: |
+          export ROOT_DIR=$(pwd)
+          cd "${ROOT_DIR}/deps"
+          tar -xzf "${ROOT_DIR}/releases/libaria2-${{ env.ARIA2_COMMIT_SHORT }}-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps
+          tar -czf "${ROOT_DIR}/releases/aria2-deps-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps .
 
       - uses: softprops/action-gh-release@v1
         with:
