@@ -345,6 +345,7 @@ jobs:
             releases/libaria2-${{ env.ARIA2_COMMIT_SHORT }}-${{ matrix.pair.arch }}.tar.gz
           key: releases-shared-libaria2-${{ env.ARIA2_COMMIT_SHORT }}-${{ matrix.pair.arch }}
       - name: Compile libaria2
+        if: steps.cache-libaria2-shared.outputs.cache-hit != 'true'
         run: |
           export ROOT_DIR=$(pwd)
           export CONFIGURE_HOST=""
@@ -481,13 +482,13 @@ jobs:
 
       - name: Cache compiled libxml2
         uses: actions/cache@v3
-        id: cache-libxml2-shared
+        id: cache-libxml2-shared-macos
         with:
           path: |
             releases/libxml2-${{ env.LIBXML2_VERSION }}-${{ matrix.pair.arch }}.tar.gz
           key: releases-libxml2-${{ env.LIBXML2_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile libxml2
-        if: steps.cache-libxml2-shared.outputs.cache-hit != 'true'
+        if: steps.cache-libxml2-shared-macos.outputs.cache-hit != 'true'
         run: |
           export ROOT_DIR=$(pwd)
           tar -xzf "tarballs/libxml2-v${LIBXML2_VERSION}.tar.gz" -C src
@@ -512,13 +513,13 @@ jobs:
 
       - name: Cache compiled libc-ares
         uses: actions/cache@v3
-        id: cache-libc-ares-shared
+        id: cache-libc-ares-shared-macos
         with:
           path: |
             releases/libc-ares-${{ env.LIBCARES2_VERSION }}-${{ matrix.pair.arch }}.tar.gz
           key: releases-libc-ares-${{ env.LIBCARES2_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile libc-ares
-        if: steps.cache-libc-ares-shared.outputs.cache-hit != 'true'
+        if: steps.cache-libc-ares-shared-macos.outputs.cache-hit != 'true'
         run: |
           export ROOT_DIR=$(pwd)
           export CONFIGURE_HOST=""
@@ -540,14 +541,14 @@ jobs:
 
       - name: Cache compiled openssl
         uses: actions/cache@v3
-        id: cache-openssl-shared
+        id: cache-openssl-shared-macos
         with:
           path: |
             releases/openssl-${{ env.OPENSSL_VERSION }}-${{ matrix.pair.arch }}.tar.gz
             deps/openssl/
           key: releases-openssl-${{ env.OPENSSL_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile openssl
-        if: steps.cache-openssl-shared.outputs.cache-hit != 'true'
+        if: steps.cache-openssl-shared-macos.outputs.cache-hit != 'true'
         run: |
           export ROOT_DIR=$(pwd)
           export CONFIGURE_PARAM="${{ matrix.pair.openssl_configure }}"
@@ -561,13 +562,13 @@ jobs:
 
       - name: Cache compiled libssh2
         uses: actions/cache@v3
-        id: cache-libssh2-shared
+        id: cache-libssh2-shared-macos
         with:
           path: |
             releases/libssh2-${{ env.LIBSSH2_VERSION }}-${{ matrix.pair.arch }}.tar.gz
           key: releases-libssh2-${{ env.LIBSSH2_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile libssh2
-        if: steps.cache-libssh2-shared.outputs.cache-hit != 'true'
+        if: steps.cache-libssh2-shared-macos.outputs.cache-hit != 'true'
         run: |
           export ROOT_DIR=$(pwd)
           export CONFIGURE_HOST=""
@@ -591,13 +592,13 @@ jobs:
 
       - name: Cache compiled sqlite3
         uses: actions/cache@v3
-        id: cache-sqlite3-shared
+        id: cache-sqlite3-shared-macos
         with:
           path: |
             releases/sqlite3-${{ env.SQLITE3_VERSION }}-${{ matrix.pair.arch }}.tar.gz
           key: releases-sqlite3-${{ env.SQLITE3_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile sqlite3
-        if: steps.cache-sqlite3-shared.outputs.cache-hit != 'true'
+        if: steps.cache-sqlite3-shared-macos.outputs.cache-hit != 'true'
         run: |
           export ROOT_DIR=$(pwd)
           export CONFIGURE_HOST=""
@@ -632,12 +633,13 @@ jobs:
 
       - name: Cache compiled libaria2
         uses: actions/cache@v3
-        id: cache-libaria2-shared
+        id: cache-libaria2-shared-macos
         with:
           path: |
             releases/libaria2-${{ env.ARIA2_COMMIT_SHORT }}-${{ matrix.pair.arch }}.tar.gz
           key: releases-shared-libaria2-${{ env.ARIA2_COMMIT_SHORT }}-${{ matrix.pair.arch }}
       - name: Compile libaria2
+        if: steps.cache-libaria2-shared-macos.outputs.cache-hit != 'true'
         run: |
           brew install autoconf automake libtool
           export ROOT_DIR=$(pwd)
