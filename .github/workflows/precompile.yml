@@ -650,7 +650,7 @@ jobs:
             export CFLAGS="-arch arm64 -mmacosx-version-min=11.0 -target arm64-apple-macos11"
             export LDFLAGS="-arch arm64 -mmacosx-version-min=11.0 -target arm64-apple-macos11 -L/usr/local/lib -lcrypto -lxml2 ${LDFLAGS}"
           fi
-          sudo tar -xzf "${ROOT_DIR}/releases/aria2-deps-${{ matrix.pair.arch }}.tar.gz" -C /
+          sudo cp -rf ${ROOT_DIR}/deps/aria2-deps/* /
           cd "src/aria2-${{ env.ARIA2_COMMIT }}"
           autoreconf -i
           ./configure --enable-shared --enable-libaria2 "${CONFIGURE_HOST}"
