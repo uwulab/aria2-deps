@@ -315,6 +315,7 @@ jobs:
           tar -xzf "${ROOT_DIR}/releases/openssl-${OPENSSL_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps
           tar -xzf "${ROOT_DIR}/releases/libssh2-${LIBSSH2_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps
           tar -xzf "${ROOT_DIR}/releases/sqlite3-${SQLITE3_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps
+          tar -xzf "${ROOT_DIR}/releases/zlib-${ZLIB_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps
 
           tar -czf "${ROOT_DIR}/releases/aria2-deps-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps .
 
@@ -331,6 +332,7 @@ jobs:
           cd src/aria2
           sudo apt install -y autoconf automake libtool autopoint gettext
           autoreconf -i
+          export ZLIB_LIBS="-L${ROOT_DIR}/deps/aria2-deps/usr/local/lib -lz"
           ./configure --enable-shared --enable-libaria2 "${CONFIGURE_HOST}"
           make -j$(nproc)
           make DESTDIR="${ROOT_DIR}/deps/aria2" install
