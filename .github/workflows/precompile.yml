@@ -9,6 +9,7 @@ env:
   SQLITE3_VERSION: "3430200"
   ARIA2_COMMIT: "076dea3896dba6a8e2acc683818ff60602efa9d4"
   ARIA2_COMMIT_SHORT: "076dea3"
+  BUILD_TYPE: "static"
 
 on:
   push:
@@ -166,20 +167,24 @@ jobs:
 
       - name: Cache compiled zlib
         uses: actions/cache@v3
-        id: cache-zlib-shared
+        id: cache-zlib-lib
         with:
           path: |
             releases/zlib-${{ env.ZLIB_VERSION }}-${{ matrix.pair.arch }}.tar.gz
             deps/zlib/
-          key: releases-shared-zlib-${{ env.ZLIB_VERSION }}-${{ matrix.pair.arch }}
+          key: releases-${{ env.BUILD_TYPE }}-zlib-${{ env.ZLIB_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile zlib
-        if: steps.cache-zlib-shared.outputs.cache-hit != 'true'
+        if: steps.cache-zlib-lib.outputs.cache-hit != 'true'
         run: |
           export ROOT_DIR=$(pwd)
           tar -xzf "tarballs/zlib-${ZLIB_VERSION}.tar.gz" -C src
           cd "src/zlib-${ZLIB_VERSION}"
           export CFLAGS="-fPIC"
-          CC=${{ matrix.pair.gcc }} ./configure --prefix=/usr/local
+          if [ ${BUILD_TYPE} = "static" ]; then
+            CC=${{ matrix.pair.gcc }} ./configure --prefix=/usr/local --static ;
+          else
+            CC=${{ matrix.pair.gcc }} ./configure --prefix=/usr/local ;
+          fi
           make -j$(nproc)
           make DESTDIR="${ROOT_DIR}/deps/zlib" install
           cd "${ROOT_DIR}/deps"
@@ -187,13 +192,13 @@ jobs:
 
       - name: Cache compiled libxml2
         uses: actions/cache@v3
-        id: cache-libxml2-shared
+        id: cache-libxml2-lib
         with:
           path: |
             releases/libxml2-${{ env.LIBXML2_VERSION }}-${{ matrix.pair.arch }}.tar.gz
-          key: releases-shared-libxml2-${{ env.LIBXML2_VERSION }}-${{ matrix.pair.arch }}
+          key: releases-${{ env.BUILD_TYPE }}-libxml2-${{ env.LIBXML2_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile libxml2
-        if: steps.cache-libxml2-shared.outputs.cache-hit != 'true'
+        if: steps.cache-libxml2-lib.outputs.cache-hit != 'true'
         run: |
           export ROOT_DIR=$(pwd)
           tar -xzf "tarballs/libxml2-v${LIBXML2_VERSION}.tar.gz" -C src
@@ -202,8 +207,13 @@ jobs:
           if [ -z "${{ matrix.pair.cmake_toolchain_file }}" ]; then
             export CMAKE_TOOLCHAIN_FILE=""
           fi
+          if [ "${BUILD_TYPE}" = "static" ]; then
+            export CMAKE_BUILD_PARAM="-DBUILD_SHARED_LIBS=OFF" ;
+          else
+            export CMAKE_BUILD_PARAM="-DBUILD_STATIC_LIBS=OFF" ;
+          fi
           cmake -S . -B libxml2-build \
-              -D BUILD_STATIC_LIBS=OFF \
+              ${CMAKE_BUILD_PARAM} \
               -D CMAKE_BUILD_TYPE=Release \
               -D CMAKE_INSTALL_PREFIX=/usr/local \
               -D LIBXML2_WITH_ICONV=OFF \
@@ -219,13 +229,13 @@ jobs:
 
       - name: Cache compiled libc-ares
         uses: actions/cache@v3
-        id: cache-libc-ares-shared
+        id: cache-libc-ares-lib
         with:
           path: |
             releases/libc-ares-${{ env.LIBCARES2_VERSION }}-${{ matrix.pair.arch }}.tar.gz
-          key: releases-shared-libc-ares-${{ env.LIBCARES2_VERSION }}-${{ matrix.pair.arch }}
+          key: releases-${{ env.BUILD_TYPE }}-libc-ares-${{ env.LIBCARES2_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile libc-ares
-        if: steps.cache-libc-ares-shared.outputs.cache-hit != 'true'
+        if: steps.cache-libc-ares-lib.outputs.cache-hit != 'true'
         run: |
           export ROOT_DIR=$(pwd)
           export CONFIGURE_HOST=""
@@ -235,22 +245,25 @@ jobs:
           tar -xzf "tarballs/libc-ares-${LIBCARES2_VERSION}.tar.gz" -C src
           cd "src/c-ares-${LIBCARES2_VERSION}"
           export CFLAGS="-fPIC"
-          ./configure "${CONFIGURE_HOST}" --prefix=/usr/local --enable-shared=yes --enable-static=no
-          make -j$(nproc) && \
-              make DESTDIR="${ROOT_DIR}/deps/libc-ares" install
+          if [ "${BUILD_TYPE}" = "static" ]; then
+            ./configure "${CONFIGURE_HOST}" --prefix=/usr/local --enable-shared=no --enable-static=yes ;
+          else
+            ./configure "${CONFIGURE_HOST}" --prefix=/usr/local --enable-shared=yes --enable-static=no ;
+          fi
+          make -j$(nproc) && make DESTDIR="${ROOT_DIR}/deps/libc-ares" install
           cd "${ROOT_DIR}/deps"
           tar -czf "${ROOT_DIR}/releases/libc-ares-${LIBCARES2_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C libc-ares .
 
       - name: Cache compiled openssl
         uses: actions/cache@v3
-        id: cache-openssl-shared
+        id: cache-openssl-lib
         with:
           path: |
             releases/openssl-${{ env.OPENSSL_VERSION }}-${{ matrix.pair.arch }}.tar.gz
             deps/openssl/
-          key: releases-shared-openssl-${{ env.OPENSSL_VERSION }}-${{ matrix.pair.arch }}
+          key: releases-${{ env.BUILD_TYPE }}-openssl-${{ env.OPENSSL_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile openssl
-        if: steps.cache-openssl-shared.outputs.cache-hit != 'true'
+        if: steps.cache-openssl-lib.outputs.cache-hit != 'true'
         run: |
           export ROOT_DIR=$(pwd)
           export CONFIGURE_PARAM=""
@@ -262,7 +275,11 @@ jobs:
           tar -xzf "tarballs/openssl-${OPENSSL_VERSION}.tar.gz" -C src
           cd "src/openssl-${OPENSSL_VERSION}"
           export CFLAGS="-fPIC"
-          ./Configure "${CONFIGURE_PARAM}" "${CONFIGURE_PREFIX}" --prefix=/usr/local
+          if [ "${BUILD_TYPE}" = "static" ]; then
+            ./Configure "${CONFIGURE_PARAM}" "${CONFIGURE_PREFIX}" --prefix=/usr/local --openssldir=/usr/local no-shared ;
+          else
+            ./Configure "${CONFIGURE_PARAM}" "${CONFIGURE_PREFIX}" --prefix=/usr/local --openssldir=/usr/local shared ;
+          fi
           make -j$(nproc)
           make DESTDIR="${ROOT_DIR}/deps/openssl" install_sw
           cd "${ROOT_DIR}/deps"
@@ -270,13 +287,13 @@ jobs:
 
       - name: Cache compiled libssh2
         uses: actions/cache@v3
-        id: cache-libssh2-shared
+        id: cache-libssh2-lib
         with:
           path: |
             releases/libssh2-${{ env.LIBSSH2_VERSION }}-${{ matrix.pair.arch }}.tar.gz
-          key: releases-shared-libssh2-${{ env.LIBSSH2_VERSION }}-${{ matrix.pair.arch }}
+          key: releases-${{ env.BUILD_TYPE }}-libssh2-${{ env.LIBSSH2_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile libssh2
-        if: steps.cache-libssh2-shared.outputs.cache-hit != 'true'
+        if: steps.cache-libssh2-lib.outputs.cache-hit != 'true'
         run: |
           export ROOT_DIR=$(pwd)
           export CONFIGURE_HOST=""
@@ -286,13 +303,27 @@ jobs:
           tar -xzf "tarballs/libssh2-${LIBSSH2_VERSION}.tar.gz" -C src
           cd "src/libssh2-${LIBSSH2_VERSION}"
           export CFLAGS="-fPIC"
-          ./configure --with-crypto=openssl \
-            --with-libssl-prefix="${ROOT_DIR}/deps/openssl/usr/local" \
-            --with-libgcrypt-prefix="${ROOT_DIR}/deps/openssl/usr/local" \
-            --disable-tests \
-            --disable-sshd-tests \
-            --disable-examples-build \
-            --enable-shared=yes --enable-static=no "${CONFIGURE_HOST}"
+          if [ "${BUILD_TYPE}" = "static" ]; then
+            ./configure --with-crypto=openssl \
+                --with-libssl-prefix="${ROOT_DIR}/deps/openssl/usr/local" \
+                --with-libgcrypt-prefix="${ROOT_DIR}/deps/openssl/usr/local" \
+                --with-libz \
+                --with-libz-prefix="${ROOT_DIR}/deps/zlib/usr/local" \
+                --disable-tests \
+                --disable-sshd-tests \
+                --disable-examples-build \
+                --enable-shared=no --enable-static=yes "${CONFIGURE_HOST}" ;
+          else
+            ./configure --with-crypto=openssl \
+              --with-libssl-prefix="${ROOT_DIR}/deps/openssl/usr/local" \
+              --with-libgcrypt-prefix="${ROOT_DIR}/deps/openssl/usr/local" \
+              --with-libz \
+              --with-libz-prefix="${ROOT_DIR}/deps/zlib/usr/local" \
+              --disable-tests \
+              --disable-sshd-tests \
+              --disable-examples-build \
+              --enable-shared=yes --enable-static=no "${CONFIGURE_HOST}" ;
+          fi
           make -j$(nproc)
           make DESTDIR="${ROOT_DIR}/deps/libssh2" install
           cd "${ROOT_DIR}/deps"
@@ -300,13 +331,13 @@ jobs:
 
       - name: Cache compiled sqlite3
         uses: actions/cache@v3
-        id: cache-sqlite3-shared
+        id: cache-sqlite3-lib
         with:
           path: |
             releases/sqlite3-${{ env.SQLITE3_VERSION }}-${{ matrix.pair.arch }}.tar.gz
-          key: releases-shared-sqlite3-${{ env.SQLITE3_VERSION }}-${{ matrix.pair.arch }}
+          key: releases-${{ env.BUILD_TYPE }}-sqlite3-${{ env.SQLITE3_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile sqlite3
-        if: steps.cache-sqlite3-shared.outputs.cache-hit != 'true'
+        if: steps.cache-sqlite3-lib.outputs.cache-hit != 'true'
         run: |
           export ROOT_DIR=$(pwd)
           export CONFIGURE_HOST=""
@@ -316,7 +347,11 @@ jobs:
           tar -xzf "tarballs/sqlite-autoconf-${SQLITE3_VERSION}.tar.gz" -C src
           cd "src/sqlite-autoconf-${SQLITE3_VERSION}"
           export CFLAGS="-fPIC"
-          ./configure --enable-shared=yes --enable-static=no "${CONFIGURE_HOST}"
+          if [ "${BUILD_TYPE}" = "static" ]; then
+            ./configure --enable-shared=no --enable-static=yes "${CONFIGURE_HOST}" ;
+          else
+            ./configure --enable-shared=yes --enable-static=no "${CONFIGURE_HOST}" ;
+          fi
           make -j$(nproc)
           make DESTDIR="${ROOT_DIR}/deps/sqlite3" install
           cd "${ROOT_DIR}/deps"
@@ -339,13 +374,13 @@ jobs:
 
       - name: Cache compiled libaria2
         uses: actions/cache@v3
-        id: cache-libaria2-shared
+        id: cache-libaria2-lib
         with:
           path: |
             releases/libaria2-${{ env.ARIA2_COMMIT_SHORT }}-${{ matrix.pair.arch }}.tar.gz
-          key: releases-shared-libaria2-${{ env.ARIA2_COMMIT_SHORT }}-${{ matrix.pair.arch }}
+          key: releases-${{ env.BUILD_TYPE }}-libaria2-${{ env.ARIA2_COMMIT_SHORT }}-${{ matrix.pair.arch }}
       - name: Compile libaria2
-        if: steps.cache-libaria2-shared.outputs.cache-hit != 'true'
+        if: steps.cache-libaria2-lib.outputs.cache-hit != 'true'
         run: |
           export ROOT_DIR=$(pwd)
           export CONFIGURE_HOST=""
@@ -355,8 +390,32 @@ jobs:
           sudo tar -xzf "${ROOT_DIR}/releases/aria2-deps-${{ matrix.pair.arch }}.tar.gz" -C /
           cd "src/aria2-${{ env.ARIA2_COMMIT }}"
           autoreconf -i
+          export CFLAGS="-fPIC -pthread -ldl -lm"
+          
+          export ZLIB_CFLAGS="-I${ROOT_DIR}/deps/aria2-deps/usr/local/include"
           export ZLIB_LIBS="-L${ROOT_DIR}/deps/aria2-deps/usr/local/lib -lz"
+          
+          export LIBXML2_CFLAGS="-DLIBXML_STATIC -I${ROOT_DIR}/deps/aria2-deps/usr/local/include/libxml2"
+          export LIBXML2_LIBS="-L${ROOT_DIR}/deps/aria2-deps/usr/local/lib -lxml2"
+          
+          export SQLITE3_CFLAGS="-I${ROOT_DIR}/deps/aria2-deps/usr/local/include"
+          export SQLITE3_LIBS="-L${ROOT_DIR}/deps/aria2-deps/usr/local/lib -lsqlite3"
+          
+          export OPENSSL_CFLAGS="-I${ROOT_DIR}/deps/aria2-deps/usr/local/include"
+          export OPENSSL_LIBS="-L${ROOT_DIR}/deps/aria2-deps/usr/local/lib -lssl -lcrypto"
+          
+          export LIBSSH2_CFLAGS="-I${ROOT_DIR}/deps/aria2-deps/usr/local/include"
+          export LIBSSH2_LIBS="-L${ROOT_DIR}/deps/aria2-deps/usr/local/lib -lssh2 -lssl -lcrypto"
+
+          export LIBCARES_CFLAGS="-DCARES_STATICLIB -I${ROOT_DIR}/deps/aria2-deps/usr/local/include"
+          export LIBCARES_LIBS="-L${ROOT_DIR}/deps/aria2-deps/usr/local/lib -lcares"
+          
           export LDFLAGS="-Wl,-rpath,\$ORIGIN/lib:\$ORIGIN/lib64"
+          if [ "${BUILD_TYPE}" = "static" ]; then
+            ./configure --enable-static --enable-libaria2 "${CONFIGURE_HOST}" ARIA2_STATIC=yes PKG_CONFIG_LIBDIR="${ROOT_DIR}/deps/aria2-deps/usr/local/lib/pkgconfig" ;
+          else
+            ./configure --enable-shared --enable-libaria2 "${CONFIGURE_HOST}" PKG_CONFIG_LIBDIR="${ROOT_DIR}/deps/aria2-deps/usr/local/lib/pkgconfig" ;
+          fi
           ./configure --enable-shared --enable-libaria2 "${CONFIGURE_HOST}"
           make -j$(nproc)
           make DESTDIR="${ROOT_DIR}/deps/aria2" install
