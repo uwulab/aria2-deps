@@ -188,6 +188,7 @@ jobs:
           make -j$(nproc)
           make DESTDIR="${ROOT_DIR}/deps/zlib" install
           cd "${ROOT_DIR}/deps"
+          rm -f "${ROOT_DIR}/releases/zlib-${ZLIB_VERSION}-${{ matrix.pair.arch }}.tar.gz"
           tar -czf "${ROOT_DIR}/releases/zlib-${ZLIB_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C zlib .
 
       - name: Cache compiled libxml2
@@ -225,6 +226,7 @@ jobs:
               make -j$(nproc) && \
               make DESTDIR="${ROOT_DIR}/deps/libxml2" install
           cd "${ROOT_DIR}/deps"
+          rm -f "${ROOT_DIR}/releases/libxml2-${LIBXML2_VERSION}-${{ matrix.pair.arch }}.tar.gz"
           tar -czf "${ROOT_DIR}/releases/libxml2-${LIBXML2_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C libxml2 .
 
       - name: Cache compiled libc-ares
@@ -252,6 +254,7 @@ jobs:
           fi
           make -j$(nproc) && make DESTDIR="${ROOT_DIR}/deps/libc-ares" install
           cd "${ROOT_DIR}/deps"
+          rm -f "${ROOT_DIR}/releases/libc-ares-${LIBCARES2_VERSION}-${{ matrix.pair.arch }}.tar.gz"
           tar -czf "${ROOT_DIR}/releases/libc-ares-${LIBCARES2_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C libc-ares .
 
       - name: Cache compiled openssl
@@ -283,6 +286,7 @@ jobs:
           make -j$(nproc)
           make DESTDIR="${ROOT_DIR}/deps/openssl" install_sw
           cd "${ROOT_DIR}/deps"
+          rm -f "${ROOT_DIR}/releases/openssl-${OPENSSL_VERSION}-${{ matrix.pair.arch }}.tar.gz"
           tar -czf "${ROOT_DIR}/releases/openssl-${OPENSSL_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C openssl .
 
       - name: Cache compiled libssh2
@@ -327,6 +331,7 @@ jobs:
           make -j$(nproc)
           make DESTDIR="${ROOT_DIR}/deps/libssh2" install
           cd "${ROOT_DIR}/deps"
+          rm -f "${ROOT_DIR}/releases/libssh2-${LIBSSH2_VERSION}-${{ matrix.pair.arch }}.tar.gz"
           tar -czf "${ROOT_DIR}/releases/libssh2-${LIBSSH2_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C libssh2 .
 
       - name: Cache compiled sqlite3
@@ -355,12 +360,14 @@ jobs:
           make -j$(nproc)
           make DESTDIR="${ROOT_DIR}/deps/sqlite3" install
           cd "${ROOT_DIR}/deps"
+          rm -f "${ROOT_DIR}/releases/sqlite3-${SQLITE3_VERSION}-${{ matrix.pair.arch }}.tar.gz"
           tar -czf "${ROOT_DIR}/releases/sqlite3-${SQLITE3_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C sqlite3 .
 
       - name: Create release - phase 1
         run: |
           export ROOT_DIR=$(pwd)
           cd deps
+          rm -rf aria2-deps
           mkdir -p aria2-deps
 
           tar -xzf "${ROOT_DIR}/releases/libxml2-${LIBXML2_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps
@@ -370,6 +377,7 @@ jobs:
           tar -xzf "${ROOT_DIR}/releases/sqlite3-${SQLITE3_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps
           tar -xzf "${ROOT_DIR}/releases/zlib-${ZLIB_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps
 
+          rm -f "${ROOT_DIR}/releases/aria2-deps-${{ matrix.pair.arch }}.tar.gz"
           tar -czf "${ROOT_DIR}/releases/aria2-deps-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps .
 
       - name: Cache compiled libaria2
@@ -412,14 +420,15 @@ jobs:
           
           export LDFLAGS="-Wl,-rpath,\$ORIGIN/lib:\$ORIGIN/lib64"
           if [ "${BUILD_TYPE}" = "static" ]; then
-            ./configure --enable-static --enable-libaria2 "${CONFIGURE_HOST}" ARIA2_STATIC=yes PKG_CONFIG_LIBDIR="${ROOT_DIR}/deps/aria2-deps/usr/local/lib/pkgconfig" ;
+            ./configure --enable-static --enable-libaria2 "${CONFIGURE_HOST}" ARIA2_STATIC=yes ;
           else
-            ./configure --enable-shared --enable-libaria2 "${CONFIGURE_HOST}" PKG_CONFIG_LIBDIR="${ROOT_DIR}/deps/aria2-deps/usr/local/lib/pkgconfig" ;
+            ./configure --enable-shared --enable-libaria2 "${CONFIGURE_HOST}" ;
           fi
           ./configure --enable-shared --enable-libaria2 "${CONFIGURE_HOST}"
           make -j$(nproc)
           make DESTDIR="${ROOT_DIR}/deps/aria2" install
           cd "${ROOT_DIR}/deps"
+          rm -f "${ROOT_DIR}/releases/libaria2-${{ env.ARIA2_COMMIT_SHORT }}-${{ matrix.pair.arch }}.tar.gz"
           tar -czf "${ROOT_DIR}/releases/libaria2-${{ env.ARIA2_COMMIT_SHORT }}-${{ matrix.pair.arch }}.tar.gz" -C aria2 .
 
       - name: Create release - phase 2
@@ -427,6 +436,7 @@ jobs:
           export ROOT_DIR=$(pwd)
           cd "${ROOT_DIR}/deps"
           tar -xzf "${ROOT_DIR}/releases/libaria2-${{ env.ARIA2_COMMIT_SHORT }}-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps
+          rm -f "${ROOT_DIR}/releases/aria2-deps-${{ matrix.pair.arch }}.tar.gz"
           tar -czf "${ROOT_DIR}/releases/aria2-deps-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps .
 
       - uses: softprops/action-gh-release@v1
@@ -553,14 +563,14 @@ jobs:
 
       - name: Cache compiled zlib
         uses: actions/cache@v3
-        id: cache-zlib-shared-macos
+        id: cache-zlib-lib
         with:
           path: |
             releases/zlib-${{ env.ZLIB_VERSION }}-${{ matrix.pair.arch }}.tar.gz
             deps/zlib/
-          key: releases-shared-zlib-${{ env.ZLIB_VERSION }}-${{ matrix.pair.arch }}
+          key: releases-${{ env.BUILD_TYPE }}-zlib-${{ env.ZLIB_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile zlib
-        if: steps.cache-zlib-shared-macos.outputs.cache-hit != 'true'
+        if: steps.cache-zlib-lib.outputs.cache-hit != 'true'
         run: |
           export ROOT_DIR=$(pwd)
           tar -xzf "tarballs/zlib-${ZLIB_VERSION}.tar.gz" -C src
@@ -573,27 +583,37 @@ jobs:
             export CFLAGS="-arch arm64 -mmacosx-version-min=11.0 -target arm64-apple-macos11 ${CFLAGS}"
             export LDFLAGS="-arch arm64 -mmacosx-version-min=11.0 -target arm64-apple-macos11"
           fi
-          ./configure --prefix=/usr/local
+          if [ ${BUILD_TYPE} = "static" ]; then
+            ./configure --prefix=/usr/local --static ;
+          else
+            ./configure --prefix=/usr/local ;
+          fi
           make -j$(nproc)
           make DESTDIR="${ROOT_DIR}/deps/zlib" install
           cd "${ROOT_DIR}/deps"
+          rm -f "${ROOT_DIR}/releases/zlib-${ZLIB_VERSION}-${{ matrix.pair.arch }}.tar.gz"
           tar -czf "${ROOT_DIR}/releases/zlib-${ZLIB_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C zlib .
 
       - name: Cache compiled libxml2
         uses: actions/cache@v3
-        id: cache-libxml2-shared-macos
+        id: cache-libxml2-lib
         with:
           path: |
             releases/libxml2-${{ env.LIBXML2_VERSION }}-${{ matrix.pair.arch }}.tar.gz
-          key: releases-shared-macos-libxml2-${{ env.LIBXML2_VERSION }}-${{ matrix.pair.arch }}
+          key: releases--${{ env.BUILD_TYPE }}-libxml2-${{ env.LIBXML2_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile libxml2
-        if: steps.cache-libxml2-shared-macos.outputs.cache-hit != 'true'
+        if: steps.cache-libxml2-lib.outputs.cache-hit != 'true'
         run: |
           export ROOT_DIR=$(pwd)
           tar -xzf "tarballs/libxml2-v${LIBXML2_VERSION}.tar.gz" -C src
           cd "src/libxml2-${LIBXML2_VERSION}"
+          if [ "${BUILD_TYPE}" = "static" ]; then
+            export CMAKE_BUILD_PARAM="-DBUILD_SHARED_LIBS=OFF" ;
+          else
+            export CMAKE_BUILD_PARAM="-DBUILD_STATIC_LIBS=OFF" ;
+          fi
           cmake -S . -B libxml2-build \
-              -D BUILD_STATIC_LIBS=OFF \
+              ${CMAKE_BUILD_PARAM} \
               -D CMAKE_BUILD_TYPE=Release \
               -D CMAKE_INSTALL_PREFIX=/usr/local \
               -D LIBXML2_WITH_ICONV=OFF \
@@ -604,17 +624,18 @@ jobs:
               make -j$(sysctl -n hw.ncpu) && \
               make DESTDIR="${ROOT_DIR}/deps/libxml2" install
           cd "${ROOT_DIR}/deps"
+          rm -f "${ROOT_DIR}/releases/libxml2-${LIBXML2_VERSION}-${{ matrix.pair.arch }}.tar.gz"
           tar -czf "${ROOT_DIR}/releases/libxml2-${LIBXML2_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C libxml2 .
 
       - name: Cache compiled libc-ares
         uses: actions/cache@v3
-        id: cache-libc-ares-shared-macos
+        id: cache-libcares-lib
         with:
           path: |
             releases/libc-ares-${{ env.LIBCARES2_VERSION }}-${{ matrix.pair.arch }}.tar.gz
-          key: releases-shared-libc-ares-${{ env.LIBCARES2_VERSION }}-${{ matrix.pair.arch }}
+          key: releases--${{ env.BUILD_TYPE }}-libcares-${{ env.LIBCARES2_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile libc-ares
-        if: steps.cache-libc-ares-shared-macos.outputs.cache-hit != 'true'
+        if: steps.cache-libcares-lib.outputs.cache-hit != 'true'
         run: |
           export ROOT_DIR=$(pwd)
           export CONFIGURE_HOST=""
@@ -628,42 +649,52 @@ jobs:
           fi
           tar -xzf "tarballs/libc-ares-${LIBCARES2_VERSION}.tar.gz" -C src
           cd "src/c-ares-${LIBCARES2_VERSION}"
-          ./configure "${CONFIGURE_HOST}" --prefix=/usr/local --enable-shared=yes --enable-static=no
+          if [ "${BUILD_TYPE}" = "static" ]; then
+            ./configure "${CONFIGURE_HOST}" --prefix=/usr/local --enable-shared=no --enable-static=yes ;
+          else
+            ./configure "${CONFIGURE_HOST}" --prefix=/usr/local --enable-shared=yes --enable-static=no ;
+          fi
           make -j$(sysctl -n hw.ncpu) && \
               make DESTDIR="${ROOT_DIR}/deps/libc-ares" install
           cd "${ROOT_DIR}/deps"
+          rm -f "${ROOT_DIR}/releases/libc-ares-${LIBCARES2_VERSION}-${{ matrix.pair.arch }}.tar.gz"
           tar -czf "${ROOT_DIR}/releases/libc-ares-${LIBCARES2_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C libc-ares .
 
       - name: Cache compiled openssl
         uses: actions/cache@v3
-        id: cache-openssl-shared-macos
+        id: cache-openssl-lib
         with:
           path: |
             releases/openssl-${{ env.OPENSSL_VERSION }}-${{ matrix.pair.arch }}.tar.gz
             deps/openssl/
-          key: releases-shared-openssl-${{ env.OPENSSL_VERSION }}-${{ matrix.pair.arch }}
+          key: releases--${{ env.BUILD_TYPE }}-openssl-${{ env.OPENSSL_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile openssl
-        if: steps.cache-openssl-shared-macos.outputs.cache-hit != 'true'
+        if: steps.cache-openssl-lib.outputs.cache-hit != 'true'
         run: |
           export ROOT_DIR=$(pwd)
           export CONFIGURE_PARAM="${{ matrix.pair.openssl_configure }}"
           tar -xzf "tarballs/openssl-${OPENSSL_VERSION}.tar.gz" -C src
           cd "src/openssl-${OPENSSL_VERSION}"
-          ./Configure "${CONFIGURE_PARAM}" --prefix=/usr/local
+          if [ "${BUILD_TYPE}" = "static" ]; then
+            ./Configure "${CONFIGURE_PARAM}" --prefix=/usr/local --openssldir=/usr/local no-shared ;
+          else
+            ./Configure "${CONFIGURE_PARAM}" --prefix=/usr/local --openssldir=/usr/local shared ;
+          fi
           make -j$(sysctl -n hw.ncpu)
           make DESTDIR="${ROOT_DIR}/deps/openssl" install_sw
           cd "${ROOT_DIR}/deps"
+          rm -f "${ROOT_DIR}/releases/openssl-${OPENSSL_VERSION}-${{ matrix.pair.arch }}.tar.gz"
           tar -czf "${ROOT_DIR}/releases/openssl-${OPENSSL_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C openssl .
 
       - name: Cache compiled libssh2
         uses: actions/cache@v3
-        id: cache-libssh2-shared-macos
+        id: cache-libssh2-lib
         with:
           path: |
             releases/libssh2-${{ env.LIBSSH2_VERSION }}-${{ matrix.pair.arch }}.tar.gz
-          key: releases-shared-libssh2-${{ env.LIBSSH2_VERSION }}-${{ matrix.pair.arch }}
+          key: releases--${{ env.BUILD_TYPE }}-libssh2-${{ env.LIBSSH2_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile libssh2
-        if: steps.cache-libssh2-shared-macos.outputs.cache-hit != 'true'
+        if: steps.cache-libssh2-lib.outputs.cache-hit != 'true'
         run: |
           export ROOT_DIR=$(pwd)
           export CONFIGURE_HOST=""
@@ -678,24 +709,32 @@ jobs:
           fi
           tar -xzf "tarballs/libssh2-${LIBSSH2_VERSION}.tar.gz" -C src
           cd "src/libssh2-${LIBSSH2_VERSION}"
-          ./configure --disable-tests \
-            --disable-sshd-tests \
-            --disable-examples-build \
-            --enable-shared=yes --enable-static=no "${CONFIGURE_HOST}" ${CONFIGURE_PARAM}
+          if [ "${BUILD_TYPE}" = "static" ]; then
+            ./configure --disable-tests \
+                --disable-sshd-tests \
+                --disable-examples-build \
+                --enable-shared=no --enable-static=yes "${CONFIGURE_HOST}" ${CONFIGURE_PARAM} ;
+          else
+            ./configure --disable-tests \
+                --disable-sshd-tests \
+                --disable-examples-build \
+                --enable-shared=yes --enable-static=no "${CONFIGURE_HOST}" ${CONFIGURE_PARAM} ;
+          fi
           make -j$(sysctl -n hw.ncpu)
           make DESTDIR="${ROOT_DIR}/deps/libssh2" install
           cd "${ROOT_DIR}/deps"
+          rm -f "${ROOT_DIR}/releases/libssh2-${LIBSSH2_VERSION}-${{ matrix.pair.arch }}.tar.gz"
           tar -czf "${ROOT_DIR}/releases/libssh2-${LIBSSH2_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C libssh2 .
 
       - name: Cache compiled sqlite3
         uses: actions/cache@v3
-        id: cache-sqlite3-shared-macos
+        id: cache-sqlite3-lib
         with:
           path: |
             releases/sqlite3-${{ env.SQLITE3_VERSION }}-${{ matrix.pair.arch }}.tar.gz
-          key: releases-shared-sqlite3-${{ env.SQLITE3_VERSION }}-${{ matrix.pair.arch }}
+          key: releases--${{ env.BUILD_TYPE }}-sqlite3-${{ env.SQLITE3_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile sqlite3
-        if: steps.cache-sqlite3-shared-macos.outputs.cache-hit != 'true'
+        if: steps.cache-sqlite3-lib.outputs.cache-hit != 'true'
         run: |
           export ROOT_DIR=$(pwd)
           export CONFIGURE_HOST=""
@@ -708,16 +747,22 @@ jobs:
           fi
           tar -xzf "tarballs/sqlite-autoconf-${SQLITE3_VERSION}.tar.gz" -C src
           cd "src/sqlite-autoconf-${SQLITE3_VERSION}"
-          ./configure --enable-shared=yes --enable-static=no "${CONFIGURE_HOST}"
+          if [ "${BUILD_TYPE}" = "static" ]; then
+            ./configure --enable-shared=no --enable-static=yes "${CONFIGURE_HOST}" ;
+          else
+            ./configure --enable-shared=yes --enable-static=no "${CONFIGURE_HOST}" ;
+          fi
           make -j$(sysctl -n hw.ncpu)
           make DESTDIR="${ROOT_DIR}/deps/sqlite3" install
           cd "${ROOT_DIR}/deps"
+          rm -f "${ROOT_DIR}/releases/sqlite3-${SQLITE3_VERSION}-${{ matrix.pair.arch }}.tar.gz"
           tar -czf "${ROOT_DIR}/releases/sqlite3-${SQLITE3_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C sqlite3 .
 
       - name: Create release - phase 1
         run: |
           export ROOT_DIR=$(pwd)
           cd deps
+          rm -rf aria2-deps
           mkdir -p aria2-deps
 
           tar -xzf "${ROOT_DIR}/releases/libxml2-${LIBXML2_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps
@@ -727,22 +772,44 @@ jobs:
           tar -xzf "${ROOT_DIR}/releases/sqlite3-${SQLITE3_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps
           tar -xzf "${ROOT_DIR}/releases/zlib-${ZLIB_VERSION}-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps
 
+          rm -f "${ROOT_DIR}/releases/aria2-deps-${{ matrix.pair.arch }}.tar.gz"
           tar -czf "${ROOT_DIR}/releases/aria2-deps-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps .
 
       - name: Cache compiled libaria2
         uses: actions/cache@v3
-        id: cache-libaria2-shared-macos
+        id: cache-libaria2-lib
         with:
           path: |
             releases/libaria2-${{ env.ARIA2_COMMIT_SHORT }}-${{ matrix.pair.arch }}.tar.gz
-          key: releases-macos-libaria2-${{ env.ARIA2_COMMIT_SHORT }}-${{ matrix.pair.arch }}
+          key: releases--${{ env.BUILD_TYPE }}-libaria2-${{ env.ARIA2_COMMIT_SHORT }}-${{ matrix.pair.arch }}
       - name: Compile libaria2
-        if: steps.cache-libaria2-shared-macos.outputs.cache-hit != 'true'
+        if: steps.cache-libaria2-lib.outputs.cache-hit != 'true'
         run: |
           brew install autoconf automake libtool
           export ROOT_DIR=$(pwd)
           export CONFIGURE_HOST=""
+          export CFLAGS="-fPIC -pthread -ldl -lm"
+
+          export ZLIB_CFLAGS="-I${ROOT_DIR}/deps/aria2-deps/usr/local/include"
+          export ZLIB_LIBS="-L${ROOT_DIR}/deps/aria2-deps/usr/local/lib -lz"
+          
+          export LIBXML2_CFLAGS="-DLIBXML_STATIC -I${ROOT_DIR}/deps/aria2-deps/usr/local/include/libxml2"
+          export LIBXML2_LIBS="-L${ROOT_DIR}/deps/aria2-deps/usr/local/lib -lxml2"
+          
+          export SQLITE3_CFLAGS="-I${ROOT_DIR}/deps/aria2-deps/usr/local/include"
+          export SQLITE3_LIBS="-L${ROOT_DIR}/deps/aria2-deps/usr/local/lib -lsqlite3"
+          
+          export OPENSSL_CFLAGS="-I${ROOT_DIR}/deps/aria2-deps/usr/local/include"
+          export OPENSSL_LIBS="-L${ROOT_DIR}/deps/aria2-deps/usr/local/lib -lssl -lcrypto"
+          
+          export LIBSSH2_CFLAGS="-I${ROOT_DIR}/deps/aria2-deps/usr/local/include"
+          export LIBSSH2_LIBS="-L${ROOT_DIR}/deps/aria2-deps/usr/local/lib -lssh2 -lssl -lcrypto"
+
+          export LIBCARES_CFLAGS="-DCARES_STATICLIB -I${ROOT_DIR}/deps/aria2-deps/usr/local/include"
+          export LIBCARES_LIBS="-L${ROOT_DIR}/deps/aria2-deps/usr/local/lib -lcares"
+
           export LDFLAGS="-Wl,-rpath,@loader_path/lib"
+
           if [ "${{ matrix.pair.arch }}" != "x86_64-apple-darwin" ]; then
             export CONFIGURE_HOST="--host=${{ matrix.pair.arch }}"
             export CC="gcc -arch arm64"
@@ -753,10 +820,15 @@ jobs:
           sudo cp -rf ${ROOT_DIR}/deps/aria2-deps/* /
           cd "src/aria2-${{ env.ARIA2_COMMIT }}"
           autoreconf -i
-          ./configure --enable-shared --enable-libaria2 "${CONFIGURE_HOST}"
+          if [ "${BUILD_TYPE}" = "static" ]; then
+            ./configure --enable-static --enable-libaria2 "${CONFIGURE_HOST}" ARIA2_STATIC=yes ;
+          else
+            ./configure --enable-shared --enable-libaria2 "${CONFIGURE_HOST}" ;
+          fi
           make -j$(nproc)
           make DESTDIR="${ROOT_DIR}/deps/aria2" install
           cd "${ROOT_DIR}/deps"
+          rm -f "${ROOT_DIR}/releases/libaria2-${{ env.ARIA2_COMMIT_SHORT }}-${{ matrix.pair.arch }}.tar.gz"
           tar -czf "${ROOT_DIR}/releases/libaria2-${{ env.ARIA2_COMMIT_SHORT }}-${{ matrix.pair.arch }}.tar.gz" -C aria2 .
 
       - name: Create release - phase 2
@@ -764,6 +836,7 @@ jobs:
           export ROOT_DIR=$(pwd)
           cd "${ROOT_DIR}/deps"
           tar -xzf "${ROOT_DIR}/releases/libaria2-${{ env.ARIA2_COMMIT_SHORT }}-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps
+          rm -f "${ROOT_DIR}/releases/aria2-deps-${{ matrix.pair.arch }}.tar.gz"
           tar -czf "${ROOT_DIR}/releases/aria2-deps-${{ matrix.pair.arch }}.tar.gz" -C aria2-deps .
 
       - uses: softprops/action-gh-release@v1
