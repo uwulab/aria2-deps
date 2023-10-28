@@ -600,7 +600,7 @@ jobs:
         with:
           path: |
             releases/libxml2-${{ env.LIBXML2_VERSION }}-${{ matrix.pair.arch }}.tar.gz
-          key: releases--${{ env.BUILD_TYPE }}-libxml2-${{ env.LIBXML2_VERSION }}-${{ matrix.pair.arch }}
+          key: releases-${{ env.BUILD_TYPE }}-libxml2-${{ env.LIBXML2_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile libxml2
         if: steps.cache-libxml2-lib.outputs.cache-hit != 'true'
         run: |
@@ -633,7 +633,7 @@ jobs:
         with:
           path: |
             releases/libc-ares-${{ env.LIBCARES2_VERSION }}-${{ matrix.pair.arch }}.tar.gz
-          key: releases--${{ env.BUILD_TYPE }}-libcares-${{ env.LIBCARES2_VERSION }}-${{ matrix.pair.arch }}
+          key: releases-${{ env.BUILD_TYPE }}-libcares-${{ env.LIBCARES2_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile libc-ares
         if: steps.cache-libcares-lib.outputs.cache-hit != 'true'
         run: |
@@ -667,7 +667,7 @@ jobs:
           path: |
             releases/openssl-${{ env.OPENSSL_VERSION }}-${{ matrix.pair.arch }}.tar.gz
             deps/openssl/
-          key: releases--${{ env.BUILD_TYPE }}-openssl-${{ env.OPENSSL_VERSION }}-${{ matrix.pair.arch }}
+          key: releases-${{ env.BUILD_TYPE }}-openssl-${{ env.OPENSSL_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile openssl
         if: steps.cache-openssl-lib.outputs.cache-hit != 'true'
         run: |
@@ -692,7 +692,7 @@ jobs:
         with:
           path: |
             releases/libssh2-${{ env.LIBSSH2_VERSION }}-${{ matrix.pair.arch }}.tar.gz
-          key: releases--${{ env.BUILD_TYPE }}-libssh2-${{ env.LIBSSH2_VERSION }}-${{ matrix.pair.arch }}
+          key: releases-${{ env.BUILD_TYPE }}-libssh2-${{ env.LIBSSH2_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile libssh2
         if: steps.cache-libssh2-lib.outputs.cache-hit != 'true'
         run: |
@@ -732,7 +732,7 @@ jobs:
         with:
           path: |
             releases/sqlite3-${{ env.SQLITE3_VERSION }}-${{ matrix.pair.arch }}.tar.gz
-          key: releases--${{ env.BUILD_TYPE }}-sqlite3-${{ env.SQLITE3_VERSION }}-${{ matrix.pair.arch }}
+          key: releases-${{ env.BUILD_TYPE }}-sqlite3-${{ env.SQLITE3_VERSION }}-${{ matrix.pair.arch }}
       - name: Compile sqlite3
         if: steps.cache-sqlite3-lib.outputs.cache-hit != 'true'
         run: |
@@ -781,7 +781,7 @@ jobs:
         with:
           path: |
             releases/libaria2-${{ env.ARIA2_COMMIT_SHORT }}-${{ matrix.pair.arch }}.tar.gz
-          key: releases--${{ env.BUILD_TYPE }}-libaria2-${{ env.ARIA2_COMMIT_SHORT }}-${{ matrix.pair.arch }}
+          key: releases-${{ env.BUILD_TYPE }}-libaria2-${{ env.ARIA2_COMMIT_SHORT }}-${{ matrix.pair.arch }}
       - name: Compile libaria2
         if: steps.cache-libaria2-lib.outputs.cache-hit != 'true'
         run: |
@@ -821,9 +821,9 @@ jobs:
           cd "src/aria2-${{ env.ARIA2_COMMIT }}"
           autoreconf -i
           if [ "${BUILD_TYPE}" = "static" ]; then
-            ./configure --enable-static --enable-libaria2 "${CONFIGURE_HOST}" ARIA2_STATIC=yes ;
+            ./configure --enable-static --enable-libaria2 --without-appletls --without-gnutls --without-libgcrypt "${CONFIGURE_HOST}" ARIA2_STATIC=yes ;
           else
-            ./configure --enable-shared --enable-libaria2 "${CONFIGURE_HOST}" ;
+            ./configure --enable-shared --enable-libaria2 --without-appletls --without-gnutls --without-libgcrypt "${CONFIGURE_HOST}" ;
           fi
           make -j$(sysctl -n hw.ncpu)
           make DESTDIR="${ROOT_DIR}/deps/aria2" install
