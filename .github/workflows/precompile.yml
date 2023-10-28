@@ -808,7 +808,7 @@ jobs:
           export LIBCARES_CFLAGS="-DCARES_STATICLIB -I${ROOT_DIR}/deps/aria2-deps/usr/local/include"
           export LIBCARES_LIBS="-L${ROOT_DIR}/deps/aria2-deps/usr/local/lib -lcares"
 
-          export LDFLAGS="-Wl,-rpath,@loader_path/lib"
+          export LDFLAGS="-Wl,-rpath,@loader_path/lib -framework CoreFoundation -framework Security"
 
           if [ "${{ matrix.pair.arch }}" != "x86_64-apple-darwin" ]; then
             export CONFIGURE_HOST="--host=${{ matrix.pair.arch }}"
