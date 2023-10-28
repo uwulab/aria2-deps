@@ -588,7 +588,7 @@ jobs:
           else
             ./configure --prefix=/usr/local ;
           fi
-          make -j$(nproc)
+          make -j$(sysctl -n hw.ncpu)
           make DESTDIR="${ROOT_DIR}/deps/zlib" install
           cd "${ROOT_DIR}/deps"
           rm -f "${ROOT_DIR}/releases/zlib-${ZLIB_VERSION}-${{ matrix.pair.arch }}.tar.gz"
@@ -815,7 +815,7 @@ jobs:
             export CC="gcc -arch arm64"
             export CXX="g++ -arch arm64"
             export CFLAGS="-arch arm64 -mmacosx-version-min=11.0 -target arm64-apple-macos11"
-            export LDFLAGS="-arch arm64 -mmacosx-version-min=11.0 -target arm64-apple-macos11 -L/usr/local/lib -lcrypto -lxml2 ${LDFLAGS}"
+            export LDFLAGS="-arch arm64 -mmacosx-version-min=11.0 -target arm64-apple-macos11 ${LDFLAGS}"
           fi
           sudo cp -rf ${ROOT_DIR}/deps/aria2-deps/* /
           cd "src/aria2-${{ env.ARIA2_COMMIT }}"
@@ -825,7 +825,7 @@ jobs:
           else
             ./configure --enable-shared --enable-libaria2 "${CONFIGURE_HOST}" ;
           fi
-          make -j$(nproc)
+          make -j$(sysctl -n hw.ncpu)
           make DESTDIR="${ROOT_DIR}/deps/aria2" install
           cd "${ROOT_DIR}/deps"
           rm -f "${ROOT_DIR}/releases/libaria2-${{ env.ARIA2_COMMIT_SHORT }}-${{ matrix.pair.arch }}.tar.gz"
